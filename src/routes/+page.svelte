@@ -117,7 +117,7 @@
 	</div>
 
 	<div
-		class="flex justify-center sm:justify-start sm:w-[95%] min-h-[30vh] flex-wrap gap-3"
+		class="flex justify-center sm:justify-start sm:w-[95%] flex-wrap gap-3"
 	>
 		{#await upcoming_list}
 			<Spinner />
