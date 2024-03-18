@@ -19,7 +19,7 @@
 
 	const show_address = () => {
 		let name = el.name.replaceAll(' ', '-');
-		let address = 'show/' + el.id + '/' + name;
+		let address = '/show/' + el.id + '/' + name;
 		return address;
 	};
 

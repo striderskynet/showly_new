@@ -3,6 +3,7 @@
 	import { show, show_toggle } from '$lib/shows';
 	import Icon from '@iconify/svelte';
 	import dayjs from 'dayjs';
+	import { Tooltip } from 'flowbite-svelte';
 
 	export let data;
 
@@ -83,34 +84,63 @@
 					</span>
 				</div>
 
-				<div>
-					{#if $show.includes(data.show.id)}
-						<a
-							data-sveltekit-preload-data="false"
-							href={'/show/remove/' + data.show.id}
-							on:click|preventDefault={show_toggle(
-								data.supabase,
-								data.session.user.id,
-								data.show.id
-							)}
-							class="bg-red-500 flex max-w-max px-2 pe-4 py-1 items-center gap-2 rounded-lg hover:bg-red-700 active:bg-red-300"
-						>
-							<Icon icon="mdi:bookmark-remove" class="text-3xl" />
-							Remove from watchlist
-						</a>
+				<div class="flex gap-2 items-center">
+					{#if data.session}
+						{#if $show.includes(data.show.id)}
+							<a
+								data-sveltekit-preload-data="false"
+								href={'/show/remove/' + data.show.id}
+								on:click|preventDefault={show_toggle(
+									data.supabase,
+									data.session.user.id,
+									data.show.id
+								)}
+								class="bg-red-500 flex max-w-max px-2 pe-4 py-1 items-center gap-2 rounded-lg hover:bg-red-700 active:bg-red-300"
+							>
+								<Icon
+									icon="mdi:bookmark-remove"
+									class="text-3xl"
+								/>
+								Remove from watchlist
+							</a>
+						{:else}
+							<a
+								data-sveltekit-preload-data="false"
+								href={'/show/add/' + data.show.id}
+								on:click|preventDefault={show_toggle(
+									data.supabase,
+									data.session.user.id,
+									data.show.id
+								)}
+								class="bg-sky-500 flex max-w-max px-2 pe-4 py-1 items-center gap-2 rounded-lg hover:bg-sky-700 active:bg-sky-300"
+							>
+								<Icon
+									icon="mdi:bookmark-add"
+									class="text-3xl"
+								/>
+								Add to watchlist
+							</a>
+						{/if}
 					{:else}
 						<a
 							data-sveltekit-preload-data="false"
-							href={'/show/add/' + data.show.id}
-							on:click|preventDefault={show_toggle(
-								data.supabase,
-								data.session.user.id,
-								data.show.id
-							)}
+							href={'/login'}
 							class="bg-sky-500 flex max-w-max px-2 pe-4 py-1 items-center gap-2 rounded-lg hover:bg-sky-700 active:bg-sky-300"
 						>
-							<Icon icon="mdi:bookmark-add" class="text-3xl" />
-							Add to watchlist
+							<Icon icon="mdi:google" class="text-3xl" />
+							Login to follow
+						</a>
+					{/if}
+
+					{#if data.show.videos?.results?.length > 0}
+						<a
+							href={'https://www.youtube.com/watch?v=' +
+								data.show.videos.results.at(-1).key}
+							target="_blank"
+							class="text-gray-400 hover:text-white duration-300 ml-2"
+						>
+							<Icon icon="mdi:film-reel" class="text-3xl" />
+							<Tooltip>Watch Trailer</Tooltip>
 						</a>
 					{/if}
 				</div>
