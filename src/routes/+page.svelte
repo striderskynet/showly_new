@@ -117,10 +117,12 @@
 	</div>
 
 	<div
-		class="flex justify-center sm:justify-start sm:w-[95%] flex-wrap gap-3"
+		class="flex justify-center sm:justify-start sm:w-[95%] flex-wrap gap-3 min-h-[400px]"
 	>
 		{#await upcoming_list}
-			<Spinner />
+			<di class="flex flex-1 w-full justify-center items-center">
+				<Spinner />
+			</di>
 		{:then list}
 			<div class="text-slate-500 -mb-5 flex w-full justify-between px-10">
 				<span>Upcoming</span>
