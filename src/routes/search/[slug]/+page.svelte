@@ -1,7 +1,9 @@
 <script>
 	import Spinner from '$components/UI/spinner.svelte';
 	import DefaultCard from '$components/default_card.svelte';
+
 	import cfg from '$config/main';
+	import { show_add, show_del } from '$lib/shows.js';
 
 	import { page } from '$app/stores';
 	import '$assets/app.css';
@@ -9,6 +11,13 @@
 	export let data;
 
 	let search_input, show_list;
+
+	const add_show = (id, show) => {
+		show_add(data.supabase, data.session.user.id, id);
+		show_list = [show, ...show_list];
+
+		show_list.sort(compare);
+	};
 
 	const delete_show = (id) => {
 		show_del(data.supabase, data.session.user.id, id);
@@ -89,7 +98,7 @@
 		{:then value}
 			{#if value && value.results.length > 0}
 				{#each value.results as el}
-					<DefaultCard {el} {data} {delete_show} />
+					<DefaultCard {el} {data} {delete_show} {add_show} />
 				{/each}
 			{/if}
 		{/await}
