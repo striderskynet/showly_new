@@ -61,7 +61,7 @@
 
 {#if data.session}
 	<div
-		class="p-5 flex justify-center sm:ml-20 {data.session ||
+		class="p-5 flex justify-center w-full sm:ml-20 {data.session ||
 		show_list.length !== 0
 			? ''
 			: 'min-h-screen'}"
