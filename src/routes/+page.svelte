@@ -84,7 +84,7 @@
 				{#if show_list.length > 0}
 					<Splide
 						options={{
-							arrows: false,
+							arrows: true,
 							perPage: 6.3,
 							focus: 'left',
 							snap: true,
@@ -124,14 +124,14 @@
 				<span>Upcoming</span>
 				<a
 					href="/hots"
-					class="hover:text-white duration-300 flex items-center gap-1"
+					class="hover:text-white duration-300 flex items-center gap-1 z-10"
 				>
 					More <Icon icon="mdi:chevron-right" class="text-2xl" />
 				</a>
 			</div>
 			<Splide
 				options={{
-					arrows: false,
+					arrows: true,
 					perPage: 'auto',
 					focus: 'left',
 					snap: true,
@@ -168,14 +168,14 @@
 				<span>Trending</span>
 				<a
 					href="/trending"
-					class="hover:text-white duration-300 flex items-center gap-1"
+					class="hover:text-white duration-300 flex items-center gap-1 z-10"
 				>
 					More <Icon icon="mdi:chevron-right" class="text-2xl" />
 				</a>
 			</div>
 			<Splide
 				options={{
-					arrows: false,
+					arrows: true,
 					perPage: 'auto',
 					focus: 'left',
 					snap: true,

@@ -29,13 +29,10 @@
 			{/if}
 
 			<div
-				class="border-t-4 border-t-transparent flex"
+				class="border-t-4 border-t-transparent flex duration-300"
 				class:active={is_active}
 			>
-				<a
-					href={s.url}
-					class="hover:bg-gray-600 p-1 rounded-lg duration-300 hover:text-white"
-				>
+				<a href={s.url} class="p-1 rounded-lg duration-300">
 					<Icon icon={s.icon} class="text-3xl" />
 				</a>
 			</div>

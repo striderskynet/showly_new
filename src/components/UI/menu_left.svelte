@@ -1,5 +1,4 @@
 <script>
-	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
 	import BottomNavigation from './bottom_navigation.svelte';
@@ -135,10 +134,7 @@
 			</a>
 			<hr class="flex border-t border-gray-700 w-full -ml-2" />
 			<a
-				href={'#'}
-				on:click={() => {
-					goto('./logout');
-				}}
+				href="/logout"
 				class="relative bg-transparent p-1 text-rose-400 rounded hover:bg-rose-400 hover:text-white flex items-center gap-2 duration-300"
 			>
 				<Icon icon="mdi:logout" class="text-2xl" />
