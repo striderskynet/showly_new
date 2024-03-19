@@ -19,7 +19,7 @@
 		loading = true;
 
 		let response = await fetch(
-			cfg.api_hot_url.replaceAll(
+			cfg.api_trending_url.replaceAll(
 				'{{date}}',
 				dayjs().format('YYYY-MM-DD')
 			) + current_page,
@@ -76,5 +76,11 @@
 				{/if}
 			</IntersectionObserver>
 		{/if}
+		<!-- {#await upcoming_list}
+			
+		{:then list}
+		
+			
+		{/await} -->
 	</div>
 </div>

@@ -15,14 +15,14 @@
 			active: true,
 		},
 		{
-			url: 'asdasd',
+			url: '/calendar',
 			icon: 'mdi:calendar',
 			label: 'Calendar',
 			active: true,
 		},
 		{ url: '/hots', icon: 'mdi:fire', label: 'Upcoming', active: true },
 		{
-			url: 'asdasd',
+			url: '/trending',
 			icon: 'mdi:format-list-bulleted-triangle',
 			label: 'Trending',
 			active: true,

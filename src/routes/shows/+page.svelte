@@ -14,8 +14,7 @@
 
 	export let data;
 
-	let loading = true,
-		show_list = [];
+	let show_list = [];
 
 	function compare(a, b) {
 		if (a.day_diff < b.day_diff) {
@@ -52,7 +51,6 @@
 						res.day_diff_title = newDay.fromNow();
 					}
 
-					console.log(res);
 					show_list = [...show_list, res];
 
 					show_list.sort(compare);
