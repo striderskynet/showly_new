@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
+	import BottomNavigation from './bottom_navigation.svelte';
 
 	export let data;
 	//console.log(data);
@@ -34,7 +35,7 @@
 </script>
 
 <div
-	class="hidden sm:flex flex-col justify-between h-screen overflow-y-auto fixed w-16 group hover:w-52 duration-300 items-start bg-gray-900 left-0 top-0 text-gray-200 border-r-2 border-r-gray-500 z-[60] overflow-hidden z-50"
+	class="hidden sm:flex flex-col justify-between h-screen overflow-y-auto fixed w-16 group hover:w-52 duration-300 items-start bg-gray-900 left-0 top-0 text-gray-200 border-r-2 border-r-gray-800 overflow-hidden z-50"
 >
 	<section
 		class="flex px-2 py-2 w-full justify-center flex-col items-center text-2xl font-bold h-12 mt-2 duration-300"
@@ -157,29 +158,7 @@
 </div>
 
 <!-- Bottom NaV -->
-
-<div class="flex sm:hidden fixed w-screen bottom-3 px-5 justify-center z-50">
-	<div
-		class="w-full flex justify-evenly border-0 py-2 rounded-full shadow-xl items-center px-2 bg-black text-white"
-	>
-		{#each admin_menu as s, i}
-			{#if i === 2}
-				<div class="relative flex w-10 h-8 overflow-visible">
-					<Icon
-						icon="mdi:search"
-						class="text-5xl bg-red-500 text-white rounded-full px-3 border border-red-800 absolute -left-1/4 -top-1/2 w-16  h-16"
-					/>
-				</div>
-			{/if}
-			<a
-				href={s.url}
-				class="hover:bg-slate-600 p-1 rounded-lg duration-300"
-			>
-				<Icon icon={s.icon} class="text-3xl" />
-			</a>
-		{/each}
-	</div>
-</div>
+<BottomNavigation {admin_menu} {data} />
 
 <style type="postcss">
 	.active {

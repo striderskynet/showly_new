@@ -59,16 +59,16 @@
 	});
 </script>
 
-<div
-	class="p-5 flex justify-center sm:ml-20 {data.session ||
-	show_list.length !== 0
-		? ''
-		: 'min-h-screen'}"
->
+{#if data.session}
 	<div
-		class="flex justify-center sm:justify-start sm:w-[95%] flex-wrap gap-3"
+		class="p-5 flex justify-center sm:ml-20 {data.session ||
+		show_list.length !== 0
+			? ''
+			: 'min-h-screen'}"
 	>
-		{#if data.session}
+		<div
+			class="flex justify-center sm:justify-start sm:w-[95%] flex-wrap gap-3"
+		>
 			{#key show_list}
 				{#if show_list.length > 0}
 					{#each show_list as el}
@@ -78,8 +78,10 @@
 					<EmptyShows />
 				{/if}
 			{/key}
-		{:else}
-			<NotLogged />
-		{/if}
+		</div>
 	</div>
-</div>
+{:else}
+	<div class="flex p-5">
+		<NotLogged />
+	</div>
+{/if}

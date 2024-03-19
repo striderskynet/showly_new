@@ -34,7 +34,7 @@
 			upcoming_list = [...upcoming_list, element];
 		});
 
-		//
+		console.log(res);
 
 		loading = false;
 	};
@@ -50,10 +50,6 @@
 		reload_list();
 	});
 </script>
-
-<svelte:head>
-	<title>Showly - Index</title>
-</svelte:head>
 
 <div class="p-5 flex justify-center sm:ml-20">
 	<div

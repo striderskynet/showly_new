@@ -3,7 +3,6 @@
 	import DefaultCard from '$components/default_card.svelte';
 	import cfg from '$config/main';
 	import { show_add, show_del } from '$lib/shows';
-	import dayjs from 'dayjs';
 
 	import { onMount } from 'svelte';
 	import IntersectionObserver from '../../hooks/IntersectionObserver.svelte';
@@ -19,10 +18,7 @@
 		loading = true;
 
 		let response = await fetch(
-			cfg.api_trending_url.replaceAll(
-				'{{date}}',
-				dayjs().format('YYYY-MM-DD')
-			) + current_page,
+			cfg.api_trending_url + current_page,
 			cfg.api_options
 		);
 
@@ -34,7 +30,7 @@
 			upcoming_list = [...upcoming_list, element];
 		});
 
-		//
+		console.log(res);
 
 		loading = false;
 	};
@@ -51,14 +47,8 @@
 	});
 </script>
 
-<svelte:head>
-	<title>Showly - Index</title>
-</svelte:head>
-
-<div class="p-5 flex justify-center sm:ml-20">
-	<div
-		class="flex justify-center sm:justify-start sm:w-[95%] flex-wrap gap-3"
-	>
+<div class="p-3 flex justify-center sm:ml-20">
+	<div class="flex justify-center w-full flex-wrap">
 		{#if loading && upcoming_list.length === 0}
 			<div
 				class="w-full h-screen flex justify-center items-center scale-150"
@@ -76,11 +66,5 @@
 				{/if}
 			</IntersectionObserver>
 		{/if}
-		<!-- {#await upcoming_list}
-			
-		{:then list}
-		
-			
-		{/await} -->
 	</div>
 </div>

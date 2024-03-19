@@ -78,10 +78,8 @@
 		(trending_list = data.trending_list);
 </script>
 
-<div class="p-5 flex flex-col sm:ml-20 min-h-screen">
-	<div
-		class="flex justify-center sm:justify-start sm:w-[95%] min-h-[30vh] flex-wrap gap-3"
-	>
+<div class="p-5 flex flex-col min-h-screen">
+	<div class="flex justify-center sm:justify-start flex-wrap gap-3">
 		{#if data.session}
 			{#key show_list}
 				{#if show_list.length > 0}
@@ -117,7 +115,7 @@
 		{/if}
 	</div>
 
-	<div class="mt-20 sm:mt-0">
+	<div class="mt-20 sm:mt-5">
 		{#await upcoming_list}
 			<di class="flex flex-1 w-full justify-center items-center">
 				<Spinner />
@@ -141,7 +139,7 @@
 					pagination: false,
 					gap: '12px',
 				}}
-				class="w-full overflow-hidden py-5 absolute"
+				class="w-full overflow-hidden py-5 "
 			>
 				<!-- {void console.log(list) || ''} -->
 				{#each list.results as el}
@@ -185,7 +183,7 @@
 					pagination: false,
 					gap: '12px',
 				}}
-				class="w-full overflow-hidden py-5 absolute"
+				class="w-full overflow-hidden py-5 "
 			>
 				<!-- {void console.log(list) || ''} -->
 				{#each list.results as el}

@@ -36,7 +36,7 @@
 	href={el.address}
 	on:click={console.log(el)}
 	class="relative group sm:min-w-[200px] {shows
-		? 'aspect-[1/1.5]  '
+		? 'aspect-[1/1.5] min-w-[48%] '
 		: 'w-full min-w-[200px]'} flex {el.poster_path
 		? ''
 		: 'bg-slate-500'} rounded-xl overflow-hidden cursor-pointer border {el.followed

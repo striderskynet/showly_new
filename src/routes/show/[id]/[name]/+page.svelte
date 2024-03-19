@@ -27,7 +27,7 @@
 		style="background: #ddd center / cover no-repeat url({cfg.image_path +
 			'1280' +
 			data.show.backdrop_path})"
-		class="w-full h-screen p-10 justify-center items-center flex relative"
+		class="w-full min-h-screen p-10 justify-center items-center flex relative"
 	>
 		<div
 			class="absolute w-full h-52 bg-gradient-to-t from-black from-20% bottom-0"
@@ -40,14 +40,14 @@
 		></div> -->
 
 		<section
-			class="text-white translate-y-1/2 flex flex-col max-w-[80rem] w-full p-5 rounded-xl bg-black bg-opacity-30 backdrop-blur-sm"
+			class="text-white translate-y-28 sm:translate-y-1/2 flex flex-col max-w-[80rem] w-full p-5 rounded-xl bg-black bg-opacity-30 backdrop-blur-sm"
 		>
 			<div class="flex">
-				<div class="flex flex-col w-2/3 gap-5">
+				<div class="flex flex-col sm:w-2/3 gap-5">
 					<div
-						class="flex flex-col sm:flex-row justify-left items-center"
+						class="flex flex-col sm:flex-row justify-left items-center gap-5 sm:gap-0"
 					>
-						<div class="font-outline-2 text-4xl">
+						<div class="font-outline-2 sm:text-4xl text-xl">
 							{data.show.name}
 						</div>
 
@@ -55,12 +55,14 @@
 							src={cfg.image_path +
 								'1280' +
 								data.show.networks[0].logo_path}
-							class="max-w-[100px] aspect-auto ml-10"
+							class="max-w-[75px] sm:max-w-[100px] aspect-auto sm:ml-10"
 							alt={data.show.name}
 						/>
 					</div>
 
-					<div class="text-slate-300 gap-2 flex w-full text-xs">
+					<div
+						class="text-slate-300 gap-2 flex w-full text-xs justify-center sm:justify-normal flex-wrap"
+					>
 						<span
 							>{dayjs(data.show.first_air_date).format(
 								'YYYY'
@@ -144,14 +146,16 @@
 								href={'https://www.youtube.com/watch?v=' +
 									data.show.videos.results.at(-1).key}
 								target="_blank"
-								class="text-gray-400 hover:text-white duration-300 ml-2"
+								class="text-gray-200 hover:text-white duration-300 ml-2"
 							>
 								<Icon icon="mdi:film-reel" class="text-3xl" />
 								<Tooltip>Watch Trailer</Tooltip>
 							</a>
 						{/if}
 					</div>
-					<div class="text-slate-200 ml-2 w-full">
+					<div
+						class="text-slate-200 ml-2 w-full sm:text-base text-sm"
+					>
 						{data.show.overview}
 					</div>
 
@@ -173,7 +177,7 @@
 				</div>
 
 				{#if data.show.main_poster?.file_path}
-					<div class="flex flex-col w-1/3 gap-5 items-end">
+					<div class="hidden sm:flex flex-col w-1/3 gap-5 items-end">
 						<img
 							src={cfg.image_path +
 								'300' +
@@ -186,30 +190,34 @@
 			</div>
 
 			<div class="mt-5 flex gap-5 flex-wrap flex-grow">
-				{#each data.show.credits.cast as cast}
-					<div class="flex flex-col justify-center items-center">
-						<a
-							href={'/cast/' + cast.id}
-							on:click|preventDefault={() => {}}
-							class="relative overflow-hidden aspect-square w-24 border-2 rounded-full {cast.gender ===
-							0
-								? 'border-white'
-								: cast.gender === 1
-									? 'border-rose-700'
-									: 'border-blue-700'} "
-						>
-							<img
-								src={cfg.image_path + '300' + cast.profile_path}
-								alt={cast.name}
-								class="absolute w-full h-full hover:scale-125 object-cover duration-500"
-							/>
-						</a>
-						<span class="text-sm mt-2">{cast.name}</span>
-						<span class="text-xs text-gray-500"
-							>{cast.character}</span
-						>
-					</div>
-					<Tooltip>{cast.name}</Tooltip>
+				{#each data.show.credits.cast as cast, i}
+					{#if i <= 5}
+						<div class="flex flex-col justify-center items-center">
+							<a
+								href={'/cast/' + cast.id}
+								on:click|preventDefault={() => {}}
+								class="relative overflow-hidden aspect-square w-24 border-2 rounded-full {cast.gender ===
+								0
+									? 'border-white'
+									: cast.gender === 1
+										? 'border-rose-700'
+										: 'border-blue-700'} "
+							>
+								<img
+									src={cfg.image_path +
+										'300' +
+										cast.profile_path}
+									alt={cast.name}
+									class="absolute w-full h-full hover:scale-125 object-cover duration-500"
+								/>
+							</a>
+							<span class="text-sm mt-2">{cast.name}</span>
+							<span class="text-xs text-gray-500"
+								>{cast.character}</span
+							>
+						</div>
+						<Tooltip>{cast.name}</Tooltip>
+					{/if}
 				{/each}
 			</div>
 			<!-- <div class="font-outline-2 text-7xl shadow-lg">
