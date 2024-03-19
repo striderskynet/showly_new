@@ -18,7 +18,7 @@
 >
 	<a
 		href="/search"
-		class="bg-transparent text-gray-400 rounded-full bg-gray-800 hover:text-white flex items-center duration-300 h-10 w-10 justify-center"
+		class="text-gray-400 rounded-full bg-gray-800 hover:text-white flex items-center duration-300 h-10 w-10 justify-center"
 	>
 		<Icon icon="mdi:search" class="text-2xl" />
 	</a>

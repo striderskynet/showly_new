@@ -78,7 +78,9 @@
 </script>
 
 <div class="p-5 flex flex-col min-h-screen">
-	<div class="flex justify-center sm:justify-start flex-wrap gap-3">
+	<div
+		class="flex justify-center sm:justify-start flex-wrap gap-3 mt-10 sm:mt-0"
+	>
 		{#if data.session}
 			{#key show_list}
 				{#if show_list.length > 0}
