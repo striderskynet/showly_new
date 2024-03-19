@@ -2,7 +2,6 @@
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
 
-	export let data;
 	export let admin_menu;
 
 	//console.log($page);
@@ -11,7 +10,7 @@
 
 <div class="flex sm:hidden fixed w-screen bottom-3 px-5 justify-center z-50">
 	<div
-		class="w-full flex justify-evenly border-0 rounded-xl items-center px-2 bg-gray-300 text-gray-700"
+		class="w-full flex justify-evenly border-0 rounded-xl items-center px-2 bg-gray-700 text-gray-300"
 	>
 		{#each admin_menu as s, i}
 			{@const is_active = $page.url.pathname === s.url}

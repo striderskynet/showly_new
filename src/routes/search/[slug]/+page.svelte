@@ -39,8 +39,8 @@
 	$: search_shows($page.params.slug);
 </script>
 
-<div class="p-5 flex flex-col items-center gap-5">
-	<div class="w-[500px]">
+<div class="flex flex-col items-center gap-5">
+	<div class="sm:w-[500px] mt-2 z-50">
 		<form class="">
 			<label
 				for="default-search"
@@ -70,7 +70,7 @@
 				<input
 					type="search"
 					id="default-search"
-					class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+					class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 					placeholder="Search TV Shows..."
 					bind:this={search_input}
 					on:input={(e) => {
@@ -80,14 +80,15 @@
 				/>
 				<button
 					type="submit"
-					class="text-white absolute end-2.5 bottom-2.5 bg-sky-700 hover:bg-sky-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+					class="hidden sm:flex text-white absolute end-2.5 bottom-[0.30rem] bg-sky-700 hover:bg-sky-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-1 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
 					>Search</button
 				>
 			</div>
 		</form>
 	</div>
+
 	<div
-		class="flex justify-center sm:justify-start sm:w-[95%] flex-wrap gap-3"
+		class="flex justify-center sm:justify-start w-full sm:w-[95%] flex-wrap gap-3 px-3"
 	>
 		{#await show_list}
 			<div
