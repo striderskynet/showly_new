@@ -67,7 +67,7 @@
 			: 'min-h-screen'}"
 	>
 		<div
-			class="flex justify-center sm:justify-start sm:w-[95%] flex-wrap gap-3"
+			class="flex justify-center sm:justify-start w-full sm:w-[95%] flex-wrap gap-3"
 		>
 			{#key show_list}
 				{#if show_list.length > 0}
