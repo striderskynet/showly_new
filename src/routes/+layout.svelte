@@ -17,5 +17,5 @@
 
 	<TopNavigation {data} />
 
-	<div class="sm:pl-16 pt-12 sm:pt-0 w-full text-white"><slot /></div>
+	<div class="sm:pl-16 pt-10 sm:pt-0 w-full text-white"><slot /></div>
 </div>

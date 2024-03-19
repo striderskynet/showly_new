@@ -114,7 +114,7 @@
 		{/if}
 	</div>
 
-	<div class="mt-20 sm:mt-5">
+	<div class="mt-5 sm:mt-5">
 		{#await upcoming_list}
 			<di class="flex flex-1 w-full justify-center items-center">
 				<Spinner />
@@ -158,7 +158,7 @@
 		{/await}
 	</div>
 
-	<div class="mt-20 sm:mt-0 mb-20">
+	<div class="mt-5 sm:mt-0 mb-20">
 		{#await trending_list}
 			<di class="flex flex-1 w-full justify-center items-center">
 				<Spinner />

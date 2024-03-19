@@ -14,7 +14,7 @@
 </script>
 
 <div
-	class="fixed w-full top-3 z-30 md:hidden px-5 justify-between flex items-center"
+	class="fixed w-full top-2 z-30 md:hidden px-5 justify-between flex items-center"
 >
 	<a
 		href="/search"
@@ -33,13 +33,13 @@
 			<img
 				src={data.session.user.user_metadata.avatar_url}
 				alt="User Avatar"
-				class="absolute w-full h-full flex"
+				class="absolute w-full h-full flex left-0 top-0"
 			/>
 		</a>
 	{:else}
 		<a
 			href="/login"
-			class="relative bg-gray-800 p-1 rounded-full hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300 w-10 aspect-square overflow-hidden"
+			class="relative bg-gray-800 p-1 rounded-full hover:bg-gray-700 text-sky-500 hover:text-white flex items-center gap-2 duration-300 w-10 aspect-square overflow-hidden"
 		>
 			<Icon icon="mdi:user" class="w-8 text-2xl" />
 		</a>
@@ -55,7 +55,7 @@
 	bgOpacity="bg-opacity-50 backdrop-blur-sm"
 	rightOffset="end-0"
 	id="sidebar6"
-	divClass="overflow-y-auto z-50 py-4 px-2 bg-gray-800 text-white flex flex-col justify-between"
+	divClass="overflow-y-auto z-50 py-4 px-2 bg-gray-800 text-white flex flex-col "
 >
 	<div class="flex w-full justify-between items-center">
 		<h5
@@ -69,8 +69,8 @@
 			<Icon icon="mdi:close" class="text-2xl -mt-5" />
 		</button>
 	</div>
-	{#if data.session}
-		<div class="w-full flex">
+	<div class="w-full flex mt-5">
+		{#if data.session}
 			<a
 				href="/logout"
 				class="bg-transparent p-1 text-rose-400 rounded hover:bg-rose-400 hover:text-white flex w-full justify-center items-center gap-2 duration-300"
@@ -78,9 +78,7 @@
 				<Icon icon="mdi:logout" class="text-2xl" />
 				<span class="pl-1">Logout</span>
 			</a>
-		</div>
-	{:else}
-		<div class="w-full flex">
+		{:else}
 			<a
 				href="/login"
 				class="bg-transparent p-1 text-sky-400 rounded hover:bg-sky-400 hover:text-white flex w-full justify-center items-center gap-2 duration-300"
@@ -88,6 +86,6 @@
 				<Icon icon="mdi:user" class="text-2xl" />
 				<span class="pl-1">Login</span>
 			</a>
-		</div>
-	{/if}
+		{/if}
+	</div>
 </Drawer>
