@@ -72,9 +72,10 @@
 		});
 	});
 
-	let upcoming_list;
+	let upcoming_list, trending_list;
 	//console.log(data);
-	$: upcoming_list = data.upcoming_list;
+	$: (upcoming_list = data.upcoming_list),
+		(trending_list = data.trending_list);
 </script>
 
 <div class="p-5 flex flex-col sm:ml-20 min-h-screen">
@@ -116,9 +117,7 @@
 		{/if}
 	</div>
 
-	<div
-		class="flex justify-center sm:justify-start sm:w-[95%] flex-wrap gap-3 min-h-[400px]"
-	>
+	<div class="mt-20 sm:mt-0">
 		{#await upcoming_list}
 			<di class="flex flex-1 w-full justify-center items-center">
 				<Spinner />
@@ -136,13 +135,57 @@
 			<Splide
 				options={{
 					arrows: false,
-					perPage: 6.3,
+					perPage: 'auto',
 					focus: 'left',
 					snap: true,
 					pagination: false,
 					gap: '12px',
 				}}
-				class="w-full overflow-hidden py-5"
+				class="w-full overflow-hidden py-5 absolute"
+			>
+				<!-- {void console.log(list) || ''} -->
+				{#each list.results as el}
+					{#if !$show.includes(el.id)}
+						<SplideSlide class="flex aspect-[1/1.5]">
+							<DefaultCard
+								{el}
+								{data}
+								{add_show}
+								{delete_show}
+								shows={false}
+							/>
+						</SplideSlide>
+					{/if}
+				{/each}
+			</Splide>
+		{/await}
+	</div>
+
+	<div class="mt-20 sm:mt-0 mb-20">
+		{#await trending_list}
+			<di class="flex flex-1 w-full justify-center items-center">
+				<Spinner />
+			</di>
+		{:then list}
+			<div class="text-slate-500 -mb-5 flex w-full justify-between px-10">
+				<span>Trending</span>
+				<a
+					href="/trending"
+					class="hover:text-white duration-300 flex items-center gap-1"
+				>
+					More <Icon icon="mdi:chevron-right" class="text-2xl" />
+				</a>
+			</div>
+			<Splide
+				options={{
+					arrows: false,
+					perPage: 'auto',
+					focus: 'left',
+					snap: true,
+					pagination: false,
+					gap: '12px',
+				}}
+				class="w-full overflow-hidden py-5 absolute"
 			>
 				<!-- {void console.log(list) || ''} -->
 				{#each list.results as el}
