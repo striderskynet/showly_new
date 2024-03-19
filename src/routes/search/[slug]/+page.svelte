@@ -3,7 +3,7 @@
 	import DefaultCard from '$components/default_card.svelte';
 
 	import cfg from '$config/main';
-	import { show_add, show_del } from '$lib/shows.js';
+	import { show, show_add, show_del } from '$lib/shows.js';
 
 	import { page } from '$app/stores';
 	import '$assets/app.css';
@@ -97,9 +97,11 @@
 			</div>
 		{:then value}
 			{#if value && value.results.length > 0}
-				{#each value.results as el}
-					<DefaultCard {el} {data} {delete_show} {add_show} />
-				{/each}
+				{#key $show}
+					{#each value.results as el}
+						<DefaultCard {el} {data} {delete_show} {add_show} />
+					{/each}
+				{/key}
 			{/if}
 		{/await}
 	</div>
