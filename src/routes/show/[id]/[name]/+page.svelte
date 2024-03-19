@@ -198,18 +198,33 @@
 								on:click|preventDefault={() => {}}
 								class="relative overflow-hidden aspect-square w-24 border-2 rounded-full {cast.gender ===
 								0
-									? 'border-white'
+									? 'border-white text-white'
 									: cast.gender === 1
-										? 'border-rose-700'
-										: 'border-blue-700'} "
+										? 'border-rose-700 text-rose-700'
+										: 'border-blue-700 text-blue-700'} "
 							>
-								<img
-									src={cfg.image_path +
-										'300' +
-										cast.profile_path}
-									alt={cast.name}
-									class="absolute w-full h-full hover:scale-125 object-cover duration-500"
-								/>
+								{#if cast.profile_path}
+									<img
+										src={cfg.image_path +
+											'300' +
+											cast.profile_path}
+										alt={cast.name}
+										class="absolute w-full h-full hover:scale-125 object-cover duration-500"
+									/>
+								{:else}
+									<div
+										class="absolute w-full h-full flex justify-center items-center"
+									>
+										<Icon
+											icon={cast.gender === 0
+												? 'mdi:gender-non-binary'
+												: cast.gender === 1
+													? 'mdi:gender-female'
+													: 'mdi:gender-male'}
+											class="text-7xl"
+										/>
+									</div>
+								{/if}
 							</a>
 							<span class="text-sm mt-2">{cast.name}</span>
 							<span class="text-xs text-gray-500"
