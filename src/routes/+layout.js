@@ -3,7 +3,6 @@ import { PUBLIC_SUPABASE_ANON_KEY, PUBLIC_SUPABASE_URL } from '$env/static/publi
 import { createSupabaseLoadClient } from '@supabase/auth-helpers-sveltekit';
 import { show } from '../lib/shows';
 
-
 export const load = async ({ fetch, data, depends }) => {
     depends('supabase:auth')
 
@@ -18,7 +17,6 @@ export const load = async ({ fetch, data, depends }) => {
 
     const { data: { session } } = await supabase.auth.getSession()
 
-    // console.log(session.user.id,)
     if (data.session) {
         const { data: list_of_shows } = await supabase.from('shows_following').select().eq('user_id', session.user.id).order('id', { ascending: true });
 
@@ -29,8 +27,6 @@ export const load = async ({ fetch, data, depends }) => {
         show.set(list)
         //  console.log(list);
     }
-    // 
-
 
     return { supabase, session }
 }
