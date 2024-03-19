@@ -53,7 +53,7 @@
 			fetch(cfg.api_show_id + element, cfg.api_options)
 				.then((res) => res.json())
 				.then((res) => {
-					res.date_diff = 10000;
+					res.date_diff = 1000;
 
 					if (res.next_episode_to_air) {
 						let newDay = dayjs(
@@ -64,7 +64,6 @@
 						res.day_diff_title = newDay.fromNow();
 					}
 
-					console.log(res);
 					show_list = [...show_list, res];
 
 					show_list.sort(compare);
