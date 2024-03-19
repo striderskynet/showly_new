@@ -17,10 +17,21 @@
 	);
 	data.show.main_poster = poster[0];
 
-	console.log(data);
+	//console.log(data);
 
 	$: data.show;
 </script>
+
+<svelte:head>
+	<title>Showly • {data.show.id} - {data.show.name}</title>
+
+	<meta property="og:title" content="Showly | {data.show.name}" />
+	<meta property="og:description" content={data.show.overview} />
+	<meta
+		property="og:image"
+		content="{cfg.image_path}300{data.show.poster_path}"
+	/>
+</svelte:head>
 
 <div class="w-full relative">
 	<div

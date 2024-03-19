@@ -9,7 +9,7 @@
 </script>
 
 <svelteL:head>
-	<title>Showly 2.0</title>
+	<title>Showly</title>
 </svelteL:head>
 
 <div class="w-screen h-screen bg-black flex relative overflow-x-hidden">
