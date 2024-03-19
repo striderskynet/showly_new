@@ -40,7 +40,7 @@
 			fetch(cfg.api_show_id + element, cfg.api_options)
 				.then((res) => res.json())
 				.then((res) => {
-					res.date_diff = 1000;
+					res.day_diff = 10000;
 
 					if (res.next_episode_to_air) {
 						let newDay = dayjs(

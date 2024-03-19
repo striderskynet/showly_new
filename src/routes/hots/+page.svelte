@@ -51,10 +51,8 @@
 	});
 </script>
 
-<div class="p-5 flex justify-center sm:ml-20">
-	<div
-		class="flex justify-center sm:justify-start sm:w-[95%] flex-wrap gap-3"
-	>
+<div class="p-3 flex justify-center sm:ml-20">
+	<div class="flex justify-center w-full flex-wrap">
 		{#if loading && upcoming_list.length === 0}
 			<div
 				class="w-full h-screen flex justify-center items-center scale-150"
