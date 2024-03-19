@@ -3,7 +3,6 @@
 	import cfg from '$config/main';
 	import { show, show_add, show_del } from '$lib/shows.js';
 	import Icon from '@iconify/svelte';
-	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import Spinner from './../components/UI/spinner.svelte';
 
@@ -46,7 +45,7 @@
 		show_list = new_list;
 	};
 
-	onMount(() => {
+	const load_shows = () => {
 		let val = get(show);
 
 		val.forEach((element) => {
@@ -69,12 +68,16 @@
 					show_list.sort(compare);
 				});
 		});
-	});
+	};
+	// onMount(() => {
+	// 	load_shows();
+	// });
 
 	let upcoming_list, trending_list;
 
 	$: (upcoming_list = data.upcoming_list),
-		(trending_list = data.trending_list);
+		(trending_list = data.trending_list),
+		load_shows();
 </script>
 
 <div class="p-5 flex flex-col min-h-screen">

@@ -21,6 +21,11 @@ export const api_options = {
             'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiMTdiOTBhNTE4N2I2ZGQyMDYwNDA2YTk0YmUzY2Y0MSIsInN1YiI6IjY0ODdiODI1ZTI3MjYwMDBjOTMxZDQ2NCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.E-YGCzw4sOaRfJM-sM40r88ZFZbrelCImRqdDsmtttU'
     }
 };
+export const show_address = (show) => {
+    let name = show.name.replaceAll(' ', '-');
+    let address = '/show/' + show.id + '/' + name;
+    return address;
+};
 
 export default {
     image_path,
@@ -29,5 +34,8 @@ export default {
     api_hot_url,
     api_options,
     api_show_id,
-    api_show_search
+    api_show_search,
+    show_address
 };
+
+

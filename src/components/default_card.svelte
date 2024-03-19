@@ -17,12 +17,6 @@
 	dayjs.extend(relativeTime);
 	export let el;
 
-	const show_address = () => {
-		let name = el.name.replaceAll(' ', '-');
-		let address = '/show/' + el.id + '/' + name;
-		return address;
-	};
-
 	if (el.next_episode_to_air) {
 		el.air_date = dayjs(el.next_episode_to_air.air_date);
 	} else {
@@ -30,7 +24,7 @@
 	}
 
 	// console.log(el.first_air_date, el.name);
-	el.address = show_address();
+	el.address = cfg.show_address(el);
 	el.followed = $show.includes(el.id);
 </script>
 
