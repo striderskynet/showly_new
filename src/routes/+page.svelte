@@ -85,13 +85,13 @@
 					<Splide
 						options={{
 							arrows: true,
-							perPage: 6.3,
+							perPage: 'auto',
 							focus: 'left',
 							snap: true,
 							pagination: false,
 							gap: '12px',
 						}}
-						class="w-full overflow-hidden py-5"
+						class="w-full overflow-hidden py-5 "
 					>
 						{#each show_list as el}
 							<SplideSlide class="flex aspect-[1/1.5]">
