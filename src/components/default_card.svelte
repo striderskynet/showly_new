@@ -23,7 +23,11 @@
 		return address;
 	};
 
-	el.air_date = dayjs(el.first_air_date);
+	if (el.next_episode_to_air) {
+		el.air_date = dayjs(el.next_episode_to_air.air_date);
+	} else {
+		el.air_date = dayjs(el.first_air_date);
+	}
 
 	// console.log(el.first_air_date, el.name);
 	el.address = show_address();

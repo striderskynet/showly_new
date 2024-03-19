@@ -73,7 +73,7 @@
 	});
 
 	let upcoming_list, trending_list;
-	//console.log(data);
+
 	$: (upcoming_list = data.upcoming_list),
 		(trending_list = data.trending_list);
 </script>
