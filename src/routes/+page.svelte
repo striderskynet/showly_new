@@ -13,6 +13,7 @@
 
 	import dayjs from 'dayjs';
 	import relativeTime from 'dayjs/plugin/relativeTime';
+	import { onMount } from 'svelte';
 
 	dayjs.extend(relativeTime);
 
@@ -69,15 +70,15 @@
 				});
 		});
 	};
-	// onMount(() => {
-	// 	load_shows();
-	// });
+
+	onMount(() => {
+		load_shows();
+	});
 
 	let upcoming_list, trending_list;
 
 	$: (upcoming_list = data.upcoming_list),
-		(trending_list = data.trending_list),
-		load_shows();
+		(trending_list = data.trending_list);
 </script>
 
 <div class="p-5 flex flex-col min-h-screen">

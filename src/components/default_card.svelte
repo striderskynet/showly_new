@@ -37,9 +37,12 @@
 		? 'aspect-[1/1.5] min-w-[48%] '
 		: 'w-full min-w-[200px]'} flex {el.poster_path
 		? ''
-		: 'bg-slate-500'} rounded-xl overflow-hidden cursor-pointer border {el.followed
-		? 'border-sky-500'
-		: 'border-transparent'} hover:border-slate-800 duration-500"
+		: 'bg-slate-500'} rounded-xl overflow-hidden cursor-pointer border
+         {el.next_episode_to_air?.episode_number === 1
+		? 'border-yellow-800'
+		: el.followed
+			? 'border-sky-800'
+			: 'border-transparent'} hover:border-slate-800 duration-500"
 >
 	<!-- {void console.log(el.poster_path) || ''} -->
 	{#if el.poster_path}
@@ -60,11 +63,28 @@
 	{/if}
 
 	<div
-		class="absolute bottom-0 flex w-full bg-gradient-to-t from-black to-transparent backdrop-blur py-2 text-base text-white duration-300 justify-center"
+		class="absolute bottom-0 flex flex-col w-full bg-gradient-to-t from-black to-transparent backdrop-blur py-2 text-base text-white duration-300 justify-center"
 	>
-		<span
-			class="line-clamp-1 text-clip text-pretty truncate w-[80%] text-center"
-		>
+		{#if el.next_episode_to_air}
+			<div
+				class="flex flex-col opacity-0 group-hover:opacity-100 h-0 group-hover:h-12 duration-300"
+			>
+				<span
+					class="line-clamp-1 text-clip text-pretty truncate px-5 text-xs text-center"
+				>
+					<!-- {el.next_episode_to_air.air_date} -->
+					S{el.next_episode_to_air.season_number} E{el
+						.next_episode_to_air.episode_number}
+				</span>
+				<span
+					class="line-clamp-1 text-clip text-pretty truncate px-5 text-xs text-center"
+				>
+					{el.next_episode_to_air.name}
+				</span>
+				<hr class="border-gray-800 my-1" />
+			</div>
+		{/if}
+		<span class="line-clamp-1 text-clip text-pretty truncate text-center">
 			{el.name}
 		</span>
 	</div>
@@ -77,7 +97,7 @@
 
 	{#if data.session}
 		<span
-			class="absolute top-2 right-2 sm:top-1/2 sm:left-1/2 sm:-translate-y-1/2 sm:-translate-x-1/2 sm:group-hover:opacity-100 sm:opacity-0 duration-300"
+			class="absolute top-2 right-2 sm:top-1/2 sm:left-1/2 sm:-translate-y-1/2 sm:-translate-x-[40%] sm:group-hover:opacity-100 sm:opacity-0 duration-300"
 		>
 			{#if el.followed}
 				<a

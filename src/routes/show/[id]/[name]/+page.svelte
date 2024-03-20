@@ -17,7 +17,7 @@
 	);
 	data.show.main_poster = poster[0];
 
-	//console.log(data);
+	console.log(data);
 
 	$: data.show;
 </script>
@@ -67,11 +67,15 @@
 							src={cfg.image_path +
 								'1280' +
 								data.show.networks[0].logo_path}
-							class="max-w-[75px] sm:max-w-[100px] aspect-auto sm:ml-10"
+							class="max-w-[75px] sm:max-w-[100px] aspect-auto sm:ml-10 bg-white px-2 py-1 bg-opacity-50 rounded-xl backdrop-blur-3xl"
 							alt={data.show.name}
 						/>
 					</div>
-
+					<div
+						class="text-slate-300 gap-2 flex w-full text-sm ml-5 -mt-3 justify-center sm:justify-normal flex-wrap"
+					>
+						{data.show?.tagline}
+					</div>
 					<div
 						class="text-slate-300 gap-2 flex w-full text-xs justify-center sm:justify-normal flex-wrap"
 					>
@@ -186,6 +190,55 @@
 							</span>
 						</div>
 					{/if}
+					<div class="mt-5 flex gap-5 flex-wrap flex-grow">
+						{#each data.show.credits.cast as cast, i}
+							{#if i <= 5}
+								<div
+									class="flex flex-col justify-center items-center"
+								>
+									<a
+										href={'/cast/' + cast.id}
+										on:click|preventDefault={() => {}}
+										class="relative overflow-hidden aspect-square w-24 border-2 rounded-full {cast.gender ===
+										0
+											? 'border-white text-white'
+											: cast.gender === 1
+												? 'border-rose-700 text-rose-700'
+												: 'border-blue-700 text-blue-700'} "
+									>
+										{#if cast.profile_path}
+											<img
+												src={cfg.image_path +
+													'300' +
+													cast.profile_path}
+												alt={cast.name}
+												class="absolute w-full h-full hover:scale-125 object-cover duration-500"
+											/>
+										{:else}
+											<div
+												class="absolute w-full h-full flex justify-center items-center"
+											>
+												<Icon
+													icon={cast.gender === 0
+														? 'mdi:gender-non-binary'
+														: cast.gender === 1
+															? 'mdi:gender-female'
+															: 'mdi:gender-male'}
+													class="text-7xl"
+												/>
+											</div>
+										{/if}
+									</a>
+									<span class="text-sm mt-2">{cast.name}</span
+									>
+									<span class="text-xs text-gray-500"
+										>{cast.character}</span
+									>
+								</div>
+								<Tooltip>{cast.name}</Tooltip>
+							{/if}
+						{/each}
+					</div>
 				</div>
 
 				{#if data.show.main_poster?.file_path}
@@ -201,52 +254,6 @@
 				{/if}
 			</div>
 
-			<div class="mt-5 flex gap-5 flex-wrap flex-grow">
-				{#each data.show.credits.cast as cast, i}
-					{#if i <= 5}
-						<div class="flex flex-col justify-center items-center">
-							<a
-								href={'/cast/' + cast.id}
-								on:click|preventDefault={() => {}}
-								class="relative overflow-hidden aspect-square w-24 border-2 rounded-full {cast.gender ===
-								0
-									? 'border-white text-white'
-									: cast.gender === 1
-										? 'border-rose-700 text-rose-700'
-										: 'border-blue-700 text-blue-700'} "
-							>
-								{#if cast.profile_path}
-									<img
-										src={cfg.image_path +
-											'300' +
-											cast.profile_path}
-										alt={cast.name}
-										class="absolute w-full h-full hover:scale-125 object-cover duration-500"
-									/>
-								{:else}
-									<div
-										class="absolute w-full h-full flex justify-center items-center"
-									>
-										<Icon
-											icon={cast.gender === 0
-												? 'mdi:gender-non-binary'
-												: cast.gender === 1
-													? 'mdi:gender-female'
-													: 'mdi:gender-male'}
-											class="text-7xl"
-										/>
-									</div>
-								{/if}
-							</a>
-							<span class="text-sm mt-2">{cast.name}</span>
-							<span class="text-xs text-gray-500"
-								>{cast.character}</span
-							>
-						</div>
-						<Tooltip>{cast.name}</Tooltip>
-					{/if}
-				{/each}
-			</div>
 			<!-- <div class="font-outline-2 text-7xl shadow-lg">
         {data.show.name}
     </div> -->

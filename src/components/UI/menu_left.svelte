@@ -42,10 +42,10 @@
 		<img
 			src="/favicon.png"
 			alt="Admin Logo"
-			class="opacity-100 group-hover:opacity-0 absolute duration-300 w-6 rounded"
+			class="opacity-100 group-hover:opacity-0 absolute duration-300 delay-100 w-6 rounded"
 		/>
 		<div
-			class="opacity-0 group-hover:opacity-100 duration-300 flex justify-center flex-col items-center z-50"
+			class="opacity-0 group-hover:opacity-100 duration-300 delay-100 flex justify-center flex-col items-center z-50"
 		>
 			<a href="/">Showly</a>
 			<!-- <div class="flex text-[10px] uppercase font-normal -mt-4">
@@ -76,7 +76,9 @@
 					class="relative bg-transparent p-1 text-gray-400 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300"
 				>
 					<Icon icon={s.icon} class="text-2xl" />
-					<span class="hidden group-hover:flex w-32 px-2">
+					<span
+						class="opacity-0 group-hover:opacity-100 w-32 px-2 delay-75 duration-300"
+					>
 						{s.label}
 					</span>
 				</a>
@@ -92,7 +94,11 @@
 				class="relative bg-transparent p-1 text-gray-400 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300"
 			>
 				<Icon icon="mdi:search" class="text-2xl" />
-				<span class="hidden group-hover:flex w-32 px-2"> Search </span>
+				<span
+					class="opacity-0 group-hover:opacity-100 w-32 px-2 delay-75 duration-300"
+				>
+					Search
+				</span>
 			</a>
 		</section>
 	</section>
@@ -104,7 +110,11 @@
 			class="relative bg-transparent p-1 text-gray-400 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300"
 		>
 			<Icon icon="mdi:help-circle" class="text-2xl" />
-			<span class="hidden group-hover:flex w-32 pl-1"> Help </span>
+			<span
+				class="opacity-0 group-hover:opacity-100 w-32 delay-75 duration-300 pl-1"
+			>
+				Help
+			</span>
 		</a>
 
 		<a
@@ -112,7 +122,10 @@
 			class="relative bg-transparent p-1 text-gray-400 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300"
 		>
 			<Icon icon="mdi:cog" class="text-2xl" />
-			<span class="hidden group-hover:flex w-32 pl-1">Settings </span>
+			<span
+				class="opacity-0 group-hover:opacity-100 w-32 delay-75 duration-300 pl-1"
+				>Settings
+			</span>
 		</a>
 
 		{#if data.session}
@@ -127,7 +140,7 @@
 				/>
 
 				<span
-					class="hidden group-hover:flex text-pretty w-40 truncate px-2 -ml-2"
+					class="opacity-0 group-hover:opacity-100 delay-75 duration-300 text-pretty w-40 truncate px-2 -ml-2"
 				>
 					{data.session.user.email}
 				</span>
@@ -138,7 +151,10 @@
 				class="relative bg-transparent p-1 text-rose-400 rounded hover:bg-rose-400 hover:text-white flex items-center gap-2 duration-300"
 			>
 				<Icon icon="mdi:logout" class="text-2xl" />
-				<span class="hidden group-hover:flex w-32 pl-1">Logout</span>
+				<span
+					class="opacity-0 group-hover:opacity-100 delay-75 duration-300 w-32 pl-1"
+					>Logout</span
+				>
 			</a>
 		{:else}
 			<a
@@ -147,7 +163,11 @@
 			>
 				<Icon icon="mdi:user" class="w-8 text-2xl" />
 
-				<span class="hidden group-hover:flex w-32"> Log In </span>
+				<span
+					class="opacity-0 group-hover:opacity-100 delay-75 duration-300 w-32"
+				>
+					Log In
+				</span>
 			</a>
 		{/if}
 	</section>

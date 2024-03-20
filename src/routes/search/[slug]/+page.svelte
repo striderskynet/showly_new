@@ -7,6 +7,7 @@
 
 	import { page } from '$app/stores';
 	import '$assets/app.css';
+	import { onMount } from 'svelte';
 
 	export let data;
 
@@ -36,7 +37,9 @@
 		console.log('You searched for: ', query);
 	};
 
-	$: search_shows($page.params.slug);
+	onMount(() => {
+		search_shows($page.params.slug);
+	});
 </script>
 
 <div class="flex flex-col items-center gap-5">
