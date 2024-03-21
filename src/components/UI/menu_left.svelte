@@ -20,7 +20,7 @@
 			label: 'Calendar',
 			active: true,
 		},
-		{ url: '/hots', icon: 'mdi:fire', label: 'Upcoming', active: true },
+		{ url: '/hot', icon: 'mdi:fire', label: 'Upcoming', active: true },
 		{
 			url: '/trending',
 			icon: 'mdi:format-list-bulleted-triangle',

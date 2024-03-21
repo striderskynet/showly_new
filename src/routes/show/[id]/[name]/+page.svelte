@@ -2,24 +2,29 @@
 	import cfg from '$config/main';
 	import { show, show_toggle } from '$lib/shows';
 	import Icon from '@iconify/svelte';
+	import { Splide, SplideSlide } from '@splidejs/svelte-splide';
+	import '@splidejs/svelte-splide/css';
 	import dayjs from 'dayjs';
 	import { Tooltip } from 'flowbite-svelte';
 
 	export let data;
 
-	// defining logo
-	let logo = data.show.images.logos.filter((obj) => obj.iso_639_1 === 'en');
-	data.show.main_logo = logo[0];
+	const reload_all = () => {
+		// defining logo
+		let logo = data.show.images.logos.filter(
+			(obj) => obj.iso_639_1 === 'en'
+		);
+		data.show.main_logo = logo[0];
 
-	// defining poster
-	let poster = data.show.images.posters.filter(
-		(obj) => obj.iso_639_1 === 'en'
-	);
-	data.show.main_poster = poster[0];
-
+		// defining poster
+		let poster = data.show.images.posters.filter(
+			(obj) => obj.iso_639_1 === 'en'
+		);
+		data.show.main_poster = poster[0];
+	};
 	console.log(data);
 
-	$: data.show;
+	$: data.show, reload_all();
 </script>
 
 <svelte:head>
@@ -89,6 +94,21 @@
 								>18+</span
 							>
 						{/if}
+
+						<span
+							class="border-l border-l-slate-700 pl-2 {data.show
+								.status === 'In Production'
+								? 'text-green-500'
+								: ''} {data.show.status === 'Returning Series'
+								? 'text-sky-500'
+								: ''} {data.show.status === 'Ended' ||
+							data.show.status === 'Canceled'
+								? 'text-rose-500'
+								: ''}"
+						>
+							{data.show.status}
+						</span>
+
 						<span class="border-l border-l-slate-700 pl-2"
 							>{data.show.number_of_seasons > 1
 								? data.show.number_of_seasons + ' seasons'
@@ -108,6 +128,23 @@
 							{/each}
 						</span>
 					</div>
+
+					{#if data.show.next_episode_to_air}
+						<div
+							class="text-slate-300 gap-2 flex w-full text-xs justify-center sm:justify-normal flex-wrap"
+						>
+							<span class="font-bold">Next Episode:</span>
+							<span class="text-slate-400">
+								{data.show.next_episode_to_air.air_date}
+								<span class="ml-3">
+									S{data.show.next_episode_to_air
+										.season_number}E{data.show
+										.next_episode_to_air.episode_number} -
+								</span>
+								{data.show.next_episode_to_air.name}
+							</span>
+						</div>
+					{/if}
 
 					<div class="flex gap-2 items-center">
 						{#if data.session}
@@ -162,10 +199,21 @@
 								href={'https://www.youtube.com/watch?v=' +
 									data.show.videos.results.at(-1).key}
 								target="_blank"
-								class="text-gray-200 hover:text-white duration-300 ml-2"
+								class="text-gray-400 hover:text-white duration-300 ml-2"
 							>
 								<Icon icon="mdi:film-reel" class="text-3xl" />
 								<Tooltip>Watch Trailer</Tooltip>
+							</a>
+						{/if}
+
+						{#if data.show.homepage}
+							<a
+								href={data.show.homepage}
+								target="_blank"
+								class="text-gray-400 hover:text-white duration-300 ml-2"
+							>
+								<Icon icon="mdi:web" class="text-3xl" />
+								<Tooltip>Go to Homepage</Tooltip>
 							</a>
 						{/if}
 					</div>
@@ -231,9 +279,14 @@
 									</a>
 									<span class="text-sm mt-2">{cast.name}</span
 									>
-									<span class="text-xs text-gray-500"
-										>{cast.character}</span
+									<span
+										class="text-xs text-gray-500 text-center mt-1"
 									>
+										{@html cast.character.replaceAll(
+											'/',
+											'<br />'
+										)}
+									</span>
 								</div>
 								<Tooltip>{cast.name}</Tooltip>
 							{/if}
@@ -254,9 +307,136 @@
 				{/if}
 			</div>
 
-			<!-- <div class="font-outline-2 text-7xl shadow-lg">
-        {data.show.name}
-    </div> -->
+			<div class="flex flex-col mt-5">
+				<span class="ml-10">List of Seasons</span>
+				<Splide
+					options={{
+						arrows: true,
+						perPage: 'auto',
+						focus: 'left',
+						snap: true,
+						pagination: false,
+						gap: '12px',
+					}}
+					class="w-full overflow-hidden p-2"
+				>
+					{#each data.show.seasons as season}
+						<SplideSlide class="flex flex-col items-center gap-1">
+							<card
+								class="w-[250px] flex aspect-[1/1.5] border-gray-500 border overflow-hidden relative rounded-xl"
+							>
+								{#if season.poster_path}
+									<img
+										alt="Poster Imagen"
+										src={cfg.image_path +
+											'780' +
+											season.poster_path}
+										class="absolute object-contain w-full group-hover:blur duration-300"
+									/>
+								{:else}
+									<div
+										class="flex w-full h-full justify-center items-center group-hover:blur duration-300"
+									>
+										<Icon
+											icon="mdi:file-image-remove"
+											class="text-white w-20 text-9xl "
+										/>
+									</div>
+								{/if}
+
+								{#if season.vote_average}
+									<span
+										class="absolute top-2 right-2 bg-sky-800 text-white px-2 rounded-lg"
+									>
+										{season.vote_average}
+									</span>
+								{/if}
+
+								{#if season.air_date}
+									<span
+										class="absolute top-2 left-2 bg-sky-800 text-white px-2 rounded-lg"
+									>
+										{dayjs(season.air_date).format('YYYY')}
+									</span>
+								{/if}
+							</card>
+							<span>{season.name}</span>
+							<span class="text-xs -mt-2 text-gray-400">
+								{season.episode_count} episodes
+							</span>
+						</SplideSlide>
+					{/each}
+				</Splide>
+			</div>
+
+			{#if data.show.recommendations?.results.length > 0}
+				<div class="flex flex-col mt-5">
+					<span class="ml-10">You would also like</span>
+					<Splide
+						options={{
+							arrows: true,
+							perPage: 'auto',
+							focus: 'left',
+							snap: true,
+							pagination: false,
+							gap: '12px',
+						}}
+						class="w-full overflow-hidden p-2"
+					>
+						{#each data.show.recommendations.results as r_show}
+							<SplideSlide
+								class="flex flex-col items-center gap-1"
+							>
+								<a
+									href={'/show/' +
+										r_show.id +
+										'/' +
+										r_show.name.replaceAll(' ', '-')}
+									class="w-[250px] flex aspect-[1/1.5] border-gray-500 border overflow-hidden relative rounded-xl group"
+								>
+									{#if r_show.poster_path}
+										<img
+											alt="Poster Imagen"
+											src={cfg.image_path +
+												'780' +
+												r_show.poster_path}
+											class="absolute object-contain w-full group-hover:blur duration-300 group-hover:backdrop-blur-sm"
+										/>
+									{:else}
+										<div
+											class="flex w-full h-full justify-center items-center group-hover:blur duration-300"
+										>
+											<Icon
+												icon="mdi:file-image-remove"
+												class="text-white w-20 text-9xl "
+											/>
+										</div>
+									{/if}
+
+									{#if r_show.vote_average}
+										<span
+											class="absolute top-2 right-2 bg-sky-800 text-white px-2 rounded-lg"
+										>
+											{Math.round(r_show.vote_average)}
+										</span>
+									{/if}
+
+									{#if r_show.first_air_date}
+										<span
+											class="absolute top-2 left-2 bg-sky-800 text-white px-2 rounded-lg"
+										>
+											{dayjs(
+												r_show.first_air_date
+											).format('YYYY')}
+										</span>
+									{/if}
+								</a>
+								<span>{r_show.name}</span>
+							</SplideSlide>
+						{/each}
+					</Splide>
+				</div>
+			{/if}
 		</section>
 	</div>
 

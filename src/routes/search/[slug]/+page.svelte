@@ -43,7 +43,7 @@
 </script>
 
 <div class="flex flex-col items-center gap-5">
-	<div class="sm:w-[500px] mt-2 z-50">
+	<div class="sm:w-[500px] mt-[9px] z-50">
 		<form class="">
 			<label
 				for="default-search"

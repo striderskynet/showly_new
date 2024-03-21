@@ -52,7 +52,7 @@
 </script>
 
 <div class="p-3 flex justify-center sm:ml-20">
-	<div class="flex justify-center w-full flex-wrap">
+	<div class="flex justify-center w-full flex-wrap gap-1">
 		{#if loading && upcoming_list.length === 0}
 			<div
 				class="w-full h-screen flex justify-center items-center scale-150"
@@ -65,7 +65,7 @@
 			{/each}
 
 			<IntersectionObserver let:intersecting>
-				{#if intersecting}
+				{#if intersecting}f
 					{void reload_list() || ''}
 				{/if}
 			</IntersectionObserver>

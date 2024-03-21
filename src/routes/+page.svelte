@@ -129,7 +129,7 @@
 			<div class="text-slate-500 -mb-5 flex w-full justify-between px-10">
 				<span>Upcoming</span>
 				<a
-					href="/hots"
+					href="/hot"
 					class="hover:text-white duration-300 flex items-center gap-1 z-10"
 				>
 					More <Icon icon="mdi:chevron-right" class="text-2xl" />
