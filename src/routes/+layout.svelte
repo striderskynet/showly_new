@@ -12,6 +12,12 @@
 	<title>Showly</title>
 </svelteL:head>
 
+<svelte:window
+	on:scroll={() => {
+		console.log('asd');
+	}}
+/>
+
 <div class="w-screen h-screen bg-black flex relative overflow-x-hidden">
 	<MenuLeft {data} />
 

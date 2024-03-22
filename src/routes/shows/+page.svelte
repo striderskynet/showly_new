@@ -72,7 +72,12 @@
 			{#key show_list}
 				{#if show_list.length > 0}
 					{#each show_list as el}
-						<DefaultCard {el} {data} {delete_show} />
+						<DefaultCard
+							{el}
+							{data}
+							{delete_show}
+							add_show={null}
+						/>
 					{/each}
 				{:else}
 					<EmptyShows />

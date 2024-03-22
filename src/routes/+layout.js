@@ -17,6 +17,7 @@ export const load = async ({ fetch, data, depends }) => {
 
     const { data: { session } } = await supabase.auth.getSession()
 
+
     if (data.session) {
         const { data: list_of_shows } = await supabase.from('shows_following').select().eq('user_id', session.user.id).order('id', { ascending: true });
 
@@ -28,5 +29,5 @@ export const load = async ({ fetch, data, depends }) => {
         //  console.log(list);
     }
 
-    return { supabase, session }
+    return { supabase, session, }
 }

@@ -71,14 +71,30 @@
 		});
 	};
 
-	onMount(() => {
+	onMount(async () => {
+		if (data.session) {
+			const { data: list_of_shows } = await data.supabase
+				.from('shows_following')
+				.select()
+				.eq('user_id', data.session.user.id)
+				.order('id', { ascending: true });
+
+			let list = [];
+			list_of_shows.forEach((e) => {
+				list = [...list, e.show];
+			});
+			show.set(list);
+			//  console.log(list);
+		}
+
 		load_shows();
 	});
 
+	//console.log(data);
 	let upcoming_list, trending_list;
 
-	$: (upcoming_list = data.upcoming_list),
-		(trending_list = data.trending_list);
+	$: upcoming_list = data.upcoming_list;
+	$: trending_list = data.trending_list;
 </script>
 
 <div class="p-5 flex flex-col min-h-screen">

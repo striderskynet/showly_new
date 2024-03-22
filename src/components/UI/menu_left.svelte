@@ -91,6 +91,7 @@
 		<section class="flex duration-500 transition-all gap-2 flex-col ml-2">
 			<a
 				href="/search"
+				class:active={$page.url.pathname.includes('/search')}
 				class="relative bg-transparent p-1 text-gray-400 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300"
 			>
 				<Icon icon="mdi:search" class="text-2xl" />
@@ -174,7 +175,7 @@
 </div>
 
 <!-- Bottom NaV -->
-<BottomNavigation {admin_menu} {data} />
+<BottomNavigation {admin_menu} />
 
 <style type="postcss">
 	.active {

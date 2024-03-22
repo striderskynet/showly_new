@@ -32,13 +32,12 @@
 	in:scale={{ duration: 500, delay: 200 }}
 	out:scale={{ duration: 500 }}
 	href={el.address}
-	on:click={console.log(el)}
 	class="relative group sm:min-w-[200px] {shows
 		? 'aspect-[1/1.5] min-w-[48%] '
 		: 'w-full min-w-[200px]'} flex {el.poster_path
 		? ''
 		: 'bg-zinc-950 border-gray-600'} rounded-xl overflow-hidden cursor-pointer border
-         {el.next_episode_to_air?.episode_number === 1
+        {el.next_episode_to_air?.episode_number === 1
 		? 'border-yellow-800'
 		: el.followed
 			? 'border-sky-800'

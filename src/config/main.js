@@ -27,6 +27,10 @@ export const show_address = (show) => {
     return address;
 };
 
+export const api_movie_nowPlaying = 'https://api.themoviedb.org/3/movie/now_playing?language=en-US&page=1';
+export const api_movie_popular = 'https://api.themoviedb.org/3/movie/popular?language=en-US&page=1';
+export const api_movie_upcoming = 'https://api.themoviedb.org/3/discover/movie?release_date.gte={{date}}&language=en-US';
+
 export default {
     image_path,
     image_size,
@@ -35,7 +39,8 @@ export default {
     api_options,
     api_show_id,
     api_show_search,
-    show_address
+    show_address,
+
 };
 
 
