@@ -22,9 +22,6 @@ export async function load({ fetch }) {
         '{{date}}',
         dayjs().format('YYYY-MM-DD')
     ))
-
-
-
     return {
         nowPlaying_list: movies_nowPlaying_promise,
         popular_list: movies_popular,
