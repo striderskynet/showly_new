@@ -88,6 +88,29 @@
 
 		<hr class="flex border-t border-gray-700 w-full mb-2" />
 
+		<section
+			class="flex duration-500 transition-all gap-2 flex-col ml-2 relative"
+		>
+			<a
+				href="/movies"
+				class:active={$page.url.pathname.includes('/movies')}
+				class="relative bg-transparent p-1 text-gray-400 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300"
+			>
+				<span class="relative flex">
+					<Icon icon="mdi:movie-roll" class="text-2xl" />
+					<span
+						class="w-2 h-2 flex bg-red-500 rounded-full absolute right-0 animate-bounce"
+					/>
+				</span>
+				<span
+					class="opacity-0 group-hover:opacity-100 w-32 px-2 delay-75 duration-300"
+				>
+					Movies
+				</span>
+			</a>
+		</section>
+		<hr class="flex border-t border-gray-700 w-full my-2" />
+
 		<section class="flex duration-500 transition-all gap-2 flex-col ml-2">
 			<a
 				href="/search"

@@ -7,21 +7,19 @@
 
 	import { scale } from 'svelte/transition';
 
-	export let data;
+	dayjs.extend(relativeTime);
 
-	export let delete_show;
-	export let add_show;
+	export let data; // Data info for sessions and database;
+	export let delete_show; // Return function
+	export let add_show; // Return function
+	export let el; // Element info
 	export let shows = true;
 
-	//console.log(data);
-	dayjs.extend(relativeTime);
-	export let el;
+	console.log(el);
 
-	if (el.next_episode_to_air) {
+	if (el.next_episode_to_air)
 		el.air_date = dayjs(el.next_episode_to_air.air_date);
-	} else {
-		el.air_date = dayjs(el.first_air_date);
-	}
+	else el.air_date = dayjs(el.first_air_date);
 
 	// console.log(el.first_air_date, el.name);
 	el.address = cfg.show_address(el);
@@ -50,6 +48,12 @@
 			src={cfg.image_path + '780' + el.poster_path}
 			class="absolute object-contain w-full group-hover:blur duration-300"
 		/>
+	{:else if el.backdrop_path}
+		<img
+			alt="Poster Imagen"
+			src={cfg.image_path + '780' + el.backdrop_path}
+			class="absolute object-cover w-full h-full group-hover:blur duration-300"
+		/>
 	{:else}
 		<div
 			class="flex w-full h-full justify-center items-center group-hover:blur duration-300"
@@ -61,6 +65,18 @@
 		</div>
 	{/if}
 
+	{#if el.vote_average}
+		<div
+			class="absolute top-0 right-0 bg-black bg-opacity-75 rounded-lg h-6 text-white flex items-center px-2 gap-1 text-xs justify-center"
+		>
+			<Icon icon="mdi:star" class="text-yellow-500 text-2xl" />
+			<span class="pt-1">
+				{Number(el.vote_average).toFixed(
+					Number(el.vote_average) % 10 === 0 ? 0 : 1
+				)}
+			</span>
+		</div>
+	{/if}
 	<div
 		class="absolute bottom-0 flex flex-col w-full bg-gradient-to-t from-black to-transparent backdrop-blur py-2 text-base text-white duration-300 justify-center"
 	>
@@ -82,14 +98,26 @@
 				</span>
 				<hr class="border-gray-800 my-1" />
 			</div>
+		{:else if el.status}
+			<div
+				class="flex flex-col opacity-0 group-hover:opacity-100 h-0 group-hover:h-6 duration-300"
+			>
+				<span
+					class="line-clamp-1 text-clip text-pretty truncate px-5 text-xs text-center"
+				>
+					{el.status}
+				</span>
+				<hr class="border-gray-800 my-1" />
+			</div>
 		{/if}
+
 		<span class="line-clamp-1 text-clip text-pretty truncate text-center">
 			{el.name}
 		</span>
 	</div>
 
 	<span
-		class="absolute bg-sky-800 text-white line-clamp-1 text-clip text-pretty truncate px-2 text-sm text-center rounded"
+		class="absolute bg-black bg-opacity-75 text-white h-6 items-center flex line-clamp-1 text-clip text-pretty truncate px-2 text-sm text-center rounded-lg"
 	>
 		{el?.air_date?.fromNow()}
 	</span>

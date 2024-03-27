@@ -27,9 +27,9 @@ export const show_address = (show) => {
     return address;
 };
 
-export const api_movie_nowPlaying = 'https://api.themoviedb.org/3/movie/now_playing?language=en-US&page=1';
-export const api_movie_popular = 'https://api.themoviedb.org/3/movie/popular?language=en-US&page=1';
-export const api_movie_upcoming = 'https://api.themoviedb.org/3/discover/movie?release_date.gte={{date}}&language=en-US';
+export const api_movie_nowPlaying = 'https://api.themoviedb.org/3/movie/now_playing?language=en-US&page=1&region=US';
+export const api_movie_popular = 'https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&without_genres=99,10755&primary_release_date.gte={{date}}&region=US';
+export const api_movie_upcoming = 'https://api.themoviedb.org/3/movie/upcoming?language=en-US&page=1&region=US&sort_by=primary_release_date.asc';
 
 export default {
     image_path,
