@@ -223,7 +223,7 @@
 							</a>
 						{/if}
 
-						{#if data.show.torrent_list?.torrents?.length > 0}
+						{#if data.show.torrent_list?.torrents}
 							<a
 								href={'./torrent'}
 								on:click|preventDefault={() => {
@@ -461,40 +461,91 @@
 	</div>
 </div>
 
-<button
-	on:click={() => {
-		torrent_modal = false;
-	}}
-	class="{torrent_modal
-		? ''
-		: 'hidden'} fixed w-screen h-full bg-black bg-opacity-50 backdrop-blur-sm top-0 left-0 cursor-default"
-/>
-<div class="w-full justify-center flex {torrent_modal ? '' : 'hidden'}">
-	<div
-		class="absolute overflow-hidden flex flex-col w-full rounded-xl shadow-xl max-w-7xl bg-gray-800 text-slate-300 top-[25%]"
-	>
-		<h1
-			class="uppercase w-full flex bg-slate-700 pb-2 pt-3 px-5 justify-between items-center"
+{#if data.show.torrent_list.torrents}
+	<button
+		on:click={() => {
+			torrent_modal = false;
+		}}
+		class="{torrent_modal
+			? ''
+			: 'hidden'} fixed w-screen h-full bg-black bg-opacity-50 backdrop-blur-sm top-0 left-0 cursor-default"
+	/>
+	<div class="w-full justify-center flex {torrent_modal ? '' : 'hidden'}">
+		<div
+			class="absolute overflow-hidden flex flex-col w-full rounded-xl shadow-xl max-w-7xl bg-gray-800 text-slate-300 top-[25%]"
 		>
-			Torrent list
-			<a
-				href={'#'}
-				on:click|preventDefault={() => {
-					torrent_modal = false;
-				}}
-				class="hover:bg-slate-300 hover:text-slate-600 rounded-xl p-1"
+			<h1
+				class="uppercase w-full flex bg-slate-700 pb-2 pt-3 px-5 justify-between items-center"
 			>
-				<Icon icon="mdi:close" class="text-2xl" />
-			</a>
-		</h1>
-		<div class="p-5 flex flex-col gap-1">
-			{#if !data.show.torrent_list.torrents.length === 0}
-				<div class="w-full text-center my-20 text-sm text-slate-500">
-					There is no torrent for this show, you can check the
-					following sites:
-					<div
-						class="flex gap-2 text-center w-full justify-center mt-2 text-base"
-					>
+				Torrent list
+				<a
+					href={'#'}
+					on:click|preventDefault={() => {
+						torrent_modal = false;
+					}}
+					class="hover:bg-slate-300 hover:text-slate-600 rounded-xl p-1"
+				>
+					<Icon icon="mdi:close" class="text-2xl" />
+				</a>
+			</h1>
+			<div class="p-5 flex flex-col gap-1">
+				{#each data.show.torrent_list.torrents as t, i}
+					{#if t.title.includes('MeGusta')}
+						<div
+							role="button"
+							tabindex="0"
+							on:keydown={() => {
+								navigator.clipboard.writeText(t.magnet_url);
+							}}
+							on:click={() => {
+								navigator.clipboard.writeText(t.magnet_url);
+							}}
+							class="flex items-center w-full bg-slate-700 px-2 py-1 rounded hover:bg-slate-600 cursor-pointer duration-300 justify-between"
+							title="Click to Copy Magnet to Clipboard"
+						>
+							<span>
+								{t.title}
+								<span class="text-slate-500 text-xs">
+									[S{t.season}.E{t.episode}]
+								</span>
+							</span>
+							<div class="flex gap-2 items-center">
+								<span class="text-xs text-slate-400">
+									{dayjs.unix(t.date_released_unix).fromNow()}
+								</span>
+								<div
+									class="min-h-[1em] w-px self-stretch bg-gradient-to-tr from-transparent via-neutral-500 to-transparent opacity-25 dark:via-neutral-400"
+								/>
+								<span class="text-xs text-slate-400">
+									{humanFileSize(Number(t.size_bytes))}
+								</span>
+								<a
+									href={t.torrent_url}
+									alt="Torrent URL"
+									title="Torrent URL"
+									class="hover:bg-slate-300 hover:text-slate-600 p-1 rounded-xl"
+								>
+									<Icon
+										icon="simple-icons:utorrent"
+										class="text-2xl"
+									/>
+								</a>
+								<a
+									href={t.magnet_url}
+									alt="Magnet URL"
+									title="Magnet URL"
+									class="hover:bg-slate-300 hover:text-slate-600 p-1 rounded-xl"
+								>
+									<Icon icon="mdi:magnet" class="text-2xl" />
+								</a>
+							</div>
+						</div>{/if}
+				{/each}
+				<div
+					class="w-full flex justify-end text-sm text-slate-500 mt-5 items-center gap-3"
+				>
+					You can find more torrents in the following sites:
+					<div class="flex gap-2 mt-2 text-base">
 						<a
 							href="https://torrentgalaxy.to/"
 							class="text-slate-200 hover:text-slate-100 hover:bg-sky-600 bg-sky-800 px-2 py-1 rounded duration-300"
@@ -507,76 +558,7 @@
 						>
 					</div>
 				</div>
-			{/if}
-			{#each data.show.torrent_list.torrents as t, i}
-				{#if t.title.includes('MeGusta')}
-					<div
-						role="button"
-						tabindex="0"
-						on:keydown={() => {
-							navigator.clipboard.writeText(t.magnet_url);
-						}}
-						on:click={() => {
-							navigator.clipboard.writeText(t.magnet_url);
-						}}
-						class="flex items-center w-full bg-slate-700 px-2 py-1 rounded hover:bg-slate-600 cursor-pointer duration-300 justify-between"
-						title="Click to Copy Magnet to Clipboard"
-					>
-						<span>
-							{t.title}
-							<span class="text-slate-500 text-xs">
-								[S{t.season}.E{t.episode}]
-							</span>
-						</span>
-						<div class="flex gap-2 items-center">
-							<span class="text-xs text-slate-400">
-								{dayjs.unix(t.date_released_unix).fromNow()}
-							</span>
-							<div
-								class="min-h-[1em] w-px self-stretch bg-gradient-to-tr from-transparent via-neutral-500 to-transparent opacity-25 dark:via-neutral-400"
-							/>
-							<span class="text-xs text-slate-400">
-								{humanFileSize(Number(t.size_bytes))}
-							</span>
-							<a
-								href={t.torrent_url}
-								alt="Torrent URL"
-								title="Torrent URL"
-								class="hover:bg-slate-300 hover:text-slate-600 p-1 rounded-xl"
-							>
-								<Icon
-									icon="simple-icons:utorrent"
-									class="text-2xl"
-								/>
-							</a>
-							<a
-								href={t.magnet_url}
-								alt="Magnet URL"
-								title="Magnet URL"
-								class="hover:bg-slate-300 hover:text-slate-600 p-1 rounded-xl"
-							>
-								<Icon icon="mdi:magnet" class="text-2xl" />
-							</a>
-						</div>
-					</div>{/if}
-			{/each}
-			<div
-				class="w-full flex justify-end text-sm text-slate-500 mt-5 items-center gap-3"
-			>
-				You can find more torrents in the following sites:
-				<div class="flex gap-2 mt-2 text-base">
-					<a
-						href="https://torrentgalaxy.to/"
-						class="text-slate-200 hover:text-slate-100 hover:bg-sky-600 bg-sky-800 px-2 py-1 rounded duration-300"
-						>torrentgalaxy.to</a
-					>
-					<a
-						href="https://eztvx.to/"
-						class="text-slate-200 hover:text-slate-100 hover:bg-sky-600 bg-sky-800 px-2 py-1 rounded duration-300"
-						>eztvx.to</a
-					>
-				</div>
 			</div>
 		</div>
 	</div>
-</div>
+{/if}
