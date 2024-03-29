@@ -14,7 +14,8 @@
 	dayjs.extend(relativeTime);
 
 	export let data;
-	let torrent_modal = false;
+	let torrent_modal = false,
+		hide_front = false;
 
 	const reload_all = () => {
 		// defining logo
@@ -48,7 +49,19 @@
 </svelte:head>
 
 <div class="w-full relative">
-	<!-- <a href="#" class="absolute right-0 top-0 group z-50">asdasd</a> -->
+	<a
+		on:click={() => {
+			hide_front ^= true;
+		}}
+		href={'#'}
+		class="hidden sm:flex absolute right-5 top-2 group z-50 hover:bg-rose-500 hover:text-black p-1 rounded-lg"
+	>
+		<Icon
+			icon={!hide_front ? 'mdi:square-outline' : 'mdi:square-off-outline'}
+			class="text-2xl"
+		/>
+		<Tooltip class="min-w-max">Toogle Background</Tooltip>
+	</a>
 	<div
 		style="background: #ddd center / cover no-repeat url({cfg.image_path +
 			'1280' +
@@ -66,7 +79,9 @@
 		></div> -->
 
 		<section
-			class="group-hover:opacity-0 opacity-100 text-white translate-y-28 sm:translate-y-1/4 flex flex-col max-w-[80rem] w-full p-5 rounded-xl bg-black bg-opacity-30 backdrop-blur-sm"
+			class="{hide_front
+				? 'opacity-0 '
+				: 'opacity-100'}  duration-500 text-white translate-y-28 sm:translate-y-1/4 flex flex-col max-w-[80rem] w-full p-5 rounded-xl bg-black bg-opacity-30 backdrop-blur-sm"
 		>
 			<div class="flex">
 				<div class="flex flex-col sm:w-2/3 gap-5">
@@ -155,7 +170,7 @@
 						</div>
 					{/if}
 
-					<div class="flex gap-2 items-center">
+					<div class="flex sm:flex-row flex-col gap-2 items-center">
 						{#if data.session}
 							{#if $show.includes(data.show.id)}
 								<a
@@ -203,45 +218,50 @@
 							</a>
 						{/if}
 
-						{#if data.show.videos?.results?.length > 0}
-							<a
-								href={'https://www.youtube.com/watch?v=' +
-									data.show.videos.results.at(-1).key}
-								target="_blank"
-								class="text-gray-400 hover:text-white duration-300 ml-2"
-							>
-								<Icon icon="mdi:film-reel" class="text-3xl" />
-								<!-- <Tooltip>Watch Trailer</Tooltip> -->
-							</a>
-						{/if}
+						<div class="flex">
+							{#if data.show.videos?.results?.length > 0}
+								<a
+									href={'https://www.youtube.com/watch?v=' +
+										data.show.videos.results.at(-1).key}
+									target="_blank"
+									class="text-gray-400 hover:text-white duration-300 ml-2"
+								>
+									<Icon
+										icon="mdi:film-reel"
+										class="text-3xl"
+									/>
+									<!-- <Tooltip>Watch Trailer</Tooltip> -->
+								</a>
+							{/if}
 
-						{#if data.show.homepage}
-							<a
-								href={data.show.homepage}
-								target="_blank"
-								class="text-gray-400 hover:text-white duration-300 ml-2"
-							>
-								<Icon icon="mdi:web" class="text-3xl" />
-								<!-- <Tooltip>Go to Homepage</Tooltip> -->
-							</a>
-						{/if}
+							{#if data.show.homepage}
+								<a
+									href={data.show.homepage}
+									target="_blank"
+									class="text-gray-400 hover:text-white duration-300 ml-2"
+								>
+									<Icon icon="mdi:web" class="text-3xl" />
+									<!-- <Tooltip>Go to Homepage</Tooltip> -->
+								</a>
+							{/if}
 
-						{#if data.show.torrent_list?.torrents}
-							<a
-								href={'./torrent'}
-								on:click|preventDefault={() => {
-									torrent_modal = true;
-								}}
-								target="_blank"
-								class="text-gray-400 hover:text-white duration-300 ml-2"
-							>
-								<Icon icon="mdi:magnet" class="text-3xl" />
-								<!-- <Tooltip>Go to Homepage</Tooltip> -->
-							</a>
-						{/if}
+							{#if data.show.torrent_list?.torrents}
+								<a
+									href={'./torrent'}
+									on:click|preventDefault={() => {
+										torrent_modal = true;
+									}}
+									target="_blank"
+									class="text-gray-400 hover:text-white duration-300 ml-2"
+								>
+									<Icon icon="mdi:magnet" class="text-3xl" />
+									<!-- <Tooltip>Go to Homepage</Tooltip> -->
+								</a>
+							{/if}
+						</div>
 					</div>
 					<div
-						class="text-slate-200 ml-2 w-full sm:text-base text-sm"
+						class="text-slate-200 ml-2 w-full sm:text-base text-xs"
 					>
 						{data.show.overview}
 					</div>
