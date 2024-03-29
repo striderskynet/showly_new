@@ -78,7 +78,12 @@
 		</div>
 	{/if}
 	<div
-		class="absolute bottom-0 flex flex-col w-full bg-gradient-to-t from-black to-transparent backdrop-blur py-2 text-base text-white duration-300 justify-center"
+		class="absolute bottom-0 flex flex-col w-full bg-gradient-to-t {el
+			.next_episode_to_air?.episode_number === 1
+			? 'from-yellow-800'
+			: el.followed
+				? 'from-sky-800'
+				: 'from-black'} to-transparent backdrop-blur py-2 text-base text-white duration-300 justify-center"
 	>
 		{#if el.next_episode_to_air}
 			<div

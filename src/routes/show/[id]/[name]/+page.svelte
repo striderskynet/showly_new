@@ -8,6 +8,7 @@
 	import relativeTime from 'dayjs/plugin/relativeTime';
 	import { humanFileSize } from './../../../../lib/index.js';
 
+	import { dev } from '$app/environment';
 	import { Tooltip } from 'flowbite-svelte';
 
 	dayjs.extend(relativeTime);
@@ -28,7 +29,8 @@
 		);
 		data.show.main_poster = poster[0];
 	};
-	console.log(data);
+
+	if (dev) console.log(data);
 
 	$: data.show, reload_all();
 </script>
@@ -46,6 +48,7 @@
 </svelte:head>
 
 <div class="w-full relative">
+	<!-- <a href="#" class="absolute right-0 top-0 group z-50">asdasd</a> -->
 	<div
 		style="background: #ddd center / cover no-repeat url({cfg.image_path +
 			'1280' +
@@ -63,7 +66,7 @@
 		></div> -->
 
 		<section
-			class="text-white translate-y-28 sm:translate-y-1/2 flex flex-col max-w-[80rem] w-full p-5 rounded-xl bg-black bg-opacity-30 backdrop-blur-sm"
+			class="group-hover:opacity-0 opacity-100 text-white translate-y-28 sm:translate-y-1/4 flex flex-col max-w-[80rem] w-full p-5 rounded-xl bg-black bg-opacity-30 backdrop-blur-sm"
 		>
 			<div class="flex">
 				<div class="flex flex-col sm:w-2/3 gap-5">
