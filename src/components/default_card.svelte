@@ -39,7 +39,7 @@
 		? 'border-yellow-800'
 		: el.followed
 			? 'border-sky-800'
-			: 'border-transparent'} hover:border-slate-800 duration-500"
+			: 'border-transparent'} hover:border-slate-800 duration-500 overflow-hidden"
 >
 	<!-- {void console.log(el.poster_path) || ''} -->
 	{#if el.poster_path}
@@ -67,10 +67,10 @@
 
 	{#if el.vote_average}
 		<div
-			class="absolute top-0 right-0 bg-black bg-opacity-75 rounded-lg h-6 text-white flex items-center px-2 gap-1 text-xs justify-center"
+			class="absolute top-0 right-0 bg-black bg-opacity-75 rounded-bl-lg h-6 text-white flex items-center px-1 gap-1 text-xs justify-center"
 		>
-			<Icon icon="mdi:star" class="text-yellow-500 text-2xl" />
-			<span class="pt-1">
+			<Icon icon="mdi:star" class="text-yellow-500 text-xl" />
+			<span class="">
 				{Number(el.vote_average).toFixed(
 					Number(el.vote_average) % 10 === 0 ? 0 : 1
 				)}
@@ -122,7 +122,7 @@
 	</div>
 
 	<span
-		class="absolute bg-black bg-opacity-75 text-white h-6 items-center flex line-clamp-1 text-clip text-pretty truncate px-2 text-sm text-center rounded-lg"
+		class="absolute bg-black bg-opacity-75 text-white h-6 items-center flex line-clamp-1 text-clip text-pretty truncate px-2 text-sm text-center rounded-br-lg"
 	>
 		{el?.air_date?.fromNow()}
 	</span>
