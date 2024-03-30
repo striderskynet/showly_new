@@ -31,7 +31,7 @@
 		<img
 			alt="Poster Imagen"
 			src={cfg.image_path + '780' + el.poster_path}
-			class="absolute object-contain w-full group-hover:blur duration-300"
+			class="absolute object-contain w-full group-hover:scale-125 duration-300"
 		/>
 	{:else}
 		<div

@@ -46,13 +46,13 @@
 		<img
 			alt="Poster Imagen"
 			src={cfg.image_path + '780' + el.poster_path}
-			class="absolute object-contain w-full group-hover:blur duration-300"
+			class="absolute object-contain w-full group-hover:scale-110 duration-300"
 		/>
 	{:else if el.backdrop_path}
 		<img
 			alt="Poster Imagen"
 			src={cfg.image_path + '780' + el.backdrop_path}
-			class="absolute object-cover w-full h-full group-hover:blur duration-300"
+			class="absolute object-cover w-full h-full group-hover:scale-110 duration-300"
 		/>
 	{:else}
 		<div
@@ -129,11 +129,12 @@
 
 	{#if data.session}
 		<span
-			class="absolute top-2 right-2 sm:top-1/2 sm:left-1/2 sm:-translate-y-1/2 sm:-translate-x-[40%] sm:group-hover:opacity-100 sm:opacity-0 duration-300"
+			class="absolute w-full h-full justify-center items-center flex sm:group-hover:opacity-100 sm:opacity-0 duration-300"
 		>
 			{#if el.followed}
 				<a
 					data-sveltekit-preload-data="false"
+					class="group-hover:bg-black rounded-xl group-hover:bg-opacity-50"
 					href={'/show/remove/' + el.id}
 					on:click|preventDefault={() => {
 						delete_show(el.id);
@@ -142,12 +143,13 @@
 				>
 					<Icon
 						icon="mdi:bookmark-remove"
-						class="text-4xl sm:text-7xl text-red-500 hover:text-rose-500 rounded duration-300"
+						class="text-4xl sm:text-7xl text-red-500 hover:text-rose-800 rounded duration-300"
 					/>
 				</a>
 			{:else}
 				<a
 					data-sveltekit-preload-data="false"
+					class="group-hover:bg-black rounded-xl group-hover:bg-opacity-50"
 					href={'/show/add/' + el.id}
 					on:click|preventDefault={() => {
 						// show_toggle(data.supabase, data.session.user.id, el.id);
