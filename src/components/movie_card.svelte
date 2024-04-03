@@ -10,9 +10,15 @@
 	dayjs.extend(relativeTime);
 	export let el;
 
-	//console.log(el);
-
 	el.air_date = dayjs(el.release_date);
+
+	if (el.poster_path && !el.image)
+		el.poster_path = cfg.image_path + '780' + el.poster_path;
+
+	if (el.image) {
+		el.poster_path = el.image;
+		// console.log(el);
+	}
 
 	el.address = '/movie/' + el.id + '/' + el.title.replaceAll(' ', '-');
 </script>
@@ -30,7 +36,7 @@
 	{#if el.poster_path}
 		<img
 			alt="Poster Imagen"
-			src={cfg.image_path + '780' + el.poster_path}
+			src={el.poster_path}
 			class="absolute object-contain w-full group-hover:scale-125 duration-300"
 		/>
 	{:else}
@@ -47,7 +53,9 @@
 	<div
 		class="absolute bottom-0 flex flex-col w-full bg-gradient-to-t from-black to-transparent backdrop-blur py-2 text-base text-white duration-300 justify-center"
 	>
-		<span class="line-clamp-1 text-clip text-pretty truncate text-center">
+		<span
+			class="line-clamp-1 text-clip text-pretty truncate text-center capitalize"
+		>
 			{el.title}
 		</span>
 	</div>

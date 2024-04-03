@@ -46,10 +46,11 @@
 		show_list = new_list;
 	};
 
-	const load_shows = () => {
+	const load_shows = async () => {
 		let val = get(show);
 
-		val.forEach((element) => {
+		loading = true;
+		await val.forEach((element) => {
 			fetch(cfg.api_show_id + element, cfg.api_options)
 				.then((res) => res.json())
 				.then((res) => {
@@ -69,6 +70,7 @@
 					show_list.sort(compare);
 				});
 		});
+		loading = false;
 	};
 
 	onMount(async () => {
@@ -103,7 +105,7 @@
 	>
 		{#if data.session}
 			{#key show_list}
-				{#if show_list.length > 0}
+				{#if show_list.length > 0 && !loading}
 					<Splide
 						options={{
 							arrows: true,
