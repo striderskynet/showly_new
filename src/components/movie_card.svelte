@@ -63,6 +63,11 @@
 	<span
 		class="absolute bg-sky-800 text-white line-clamp-1 text-clip text-pretty truncate px-2 text-sm text-center rounded"
 	>
-		{el?.air_date?.fromNow()}
+		<span class="group-hover:hidden duration-300 flex">
+			{el?.air_date?.fromNow()}</span
+		>
+		<span class="group-hover:flex duration-300 hidden">
+			{el?.air_date?.format('MMMM D')}</span
+		>
 	</span>
 </a>

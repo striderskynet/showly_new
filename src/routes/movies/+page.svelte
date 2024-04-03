@@ -49,24 +49,30 @@
 					let attr = JSON.parse(
 						x.getAttribute('data-current-context')
 					);
-					let title = attr.userItems[0].button.buttonText;
-					let reg = /\(.*?\)/;
-					title = title.replace(reg, '').toLowerCase();
 
-					temp = [
-						...temp,
-						{
-							release_date: date,
-							title: title,
-							image: attr.userItems[0].image.assetUrl,
-						},
-					];
+					attr.userItems.forEach((r) => {
+						let title = r.button.buttonText;
+						let reg = /\(.*?\)/;
+						title = title.replace(reg, '').toLowerCase();
+
+						temp = [
+							...temp,
+							{
+								release_date: date,
+								title: title,
+								image: r.image.assetUrl,
+							},
+						];
+					});
+
 					// console.log(attr);
 				});
 			}
 		});
 
 		return temp;
+
+		console.log(temp);
 	};
 
 	onMount(() => {
