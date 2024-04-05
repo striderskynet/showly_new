@@ -1,4 +1,5 @@
 <script>
+	import { dev } from '$app/environment';
 	import cfg from '$config/main';
 	import { show } from '$lib/shows.js';
 	import Icon from '@iconify/svelte';
@@ -14,8 +15,9 @@
 	export let add_show; // Return function
 	export let el; // Element info
 	export let shows = true;
+	export let defaultClass = '';
 
-	console.log(el);
+	if (dev) console.log(el);
 
 	if (el.next_episode_to_air)
 		el.air_date = dayjs(el.next_episode_to_air.air_date);
@@ -27,7 +29,7 @@
 </script>
 
 <a
-	in:scale={{ duration: 500, delay: 200 }}
+	in:scale={{ duration: 500 }}
 	out:scale={{ duration: 500 }}
 	href={el.address}
 	class="relative group sm:min-w-[200px] {shows
@@ -39,7 +41,7 @@
 		? 'border-yellow-800'
 		: el.followed
 			? 'border-sky-800'
-			: 'border-transparent'} hover:border-slate-800 duration-500 overflow-hidden"
+			: 'border-transparent'} hover:border-slate-800 duration-500 overflow-hidden {defaultClass}"
 >
 	<!-- {void console.log(el.poster_path) || ''} -->
 	{#if el.poster_path}

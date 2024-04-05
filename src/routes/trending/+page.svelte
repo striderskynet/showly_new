@@ -30,8 +30,6 @@
 			upcoming_list = [...upcoming_list, element];
 		});
 
-		console.log(res);
-
 		loading = false;
 	};
 	const add_show = (id) => {

@@ -1,4 +1,5 @@
 <script>
+	import { dev } from '$app/environment';
 	import Spinner from '$components/UI/spinner.svelte';
 	import DefaultCard from '$components/default_card.svelte';
 
@@ -34,7 +35,7 @@
 			}
 		);
 
-		console.log('You searched for: ', query);
+		if (dev) console.log('You searched for: ', query);
 	};
 
 	onMount(() => {

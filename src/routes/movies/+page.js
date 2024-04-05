@@ -18,16 +18,12 @@ export async function load({ fetch }) {
     ), api_options
     ).then((x) => x.json());
 
-    // console.log(api_movie_popular.replaceAll(
-    //     '{{date}}',
-    //     dayjs().subtract(1, 'year').format('YYYY')));
-    // console.log(api_movie_upcoming.replaceAll(
-    //     '{{date}}',
-    //     dayjs().format('YYYY-MM-DD')
-    // ))
+
+
+
     return {
         nowPlaying_list: movies_nowPlaying_promise,
         popular_list: movies_popular,
-        upcoming_list: movies_upcoming
+        upcoming_list: movies_upcoming,
     };
 }

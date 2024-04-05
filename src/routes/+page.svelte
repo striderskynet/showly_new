@@ -8,8 +8,9 @@
 
 	import EmptyShows from '$components/Feedback/empty_shows.svelte';
 	import NotLogged from '$components/Feedback/not_logged.svelte';
-	import { Splide, SplideSlide } from '@splidejs/svelte-splide';
 	import '@splidejs/svelte-splide/css';
+
+	import { TinySlider } from 'svelte-tiny-slider';
 
 	import dayjs from 'dayjs';
 	import relativeTime from 'dayjs/plugin/relativeTime';
@@ -99,36 +100,49 @@
 	$: trending_list = data.trending_list;
 </script>
 
-<div class="p-5 flex flex-col min-h-screen">
+<div class="flex min-h-screen flex-col p-5">
 	<div
-		class="flex justify-center sm:justify-start flex-wrap gap-3 mt-10 sm:mt-0"
+		class="relative mt-10 flex flex-wrap justify-center gap-3 sm:mt-0 sm:justify-start"
 	>
 		{#if data.session}
 			{#key show_list}
 				{#if show_list.length > 0 && !loading}
-					<Splide
-						options={{
-							arrows: true,
-							perPage: 'auto',
-							focus: 'left',
-							snap: true,
-							pagination: false,
-							gap: '12px',
-						}}
-						class="w-full overflow-hidden py-5 "
-					>
+					<TinySlider gap="4px">
 						{#each show_list as el}
-							<SplideSlide class="flex aspect-[1/1.5]">
-								<DefaultCard
-									{el}
-									{data}
-									{add_show}
-									{delete_show}
-									shows={false}
-								/>
-							</SplideSlide>
+							<DefaultCard
+								{el}
+								{data}
+								{add_show}
+								{delete_show}
+								defaultClass="flex aspect-[1/1.5]"
+								shows={false}
+							/>
 						{/each}
-					</Splide>
+						<svelte:fragment
+							slot="controls"
+							let:setIndex
+							let:currentIndex
+						>
+							<button
+								on:click={() => setIndex(currentIndex - 1)}
+								class="absolute top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
+							>
+								<Icon
+									icon="mdi:chevron-left-circle"
+									class="text-5xl"
+								/>
+							</button>
+							<button
+								on:click={() => setIndex(currentIndex + 1)}
+								class="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
+							>
+								<Icon
+									icon="mdi:chevron-right-circle"
+									class="text-5xl"
+								/>
+							</button>
+						</svelte:fragment>
+					</TinySlider>
 				{:else}
 					<EmptyShows />
 				{/if}
@@ -138,96 +152,108 @@
 		{/if}
 	</div>
 
-	<div class="mt-5 sm:mt-5">
+	<div class="relative mt-5 sm:mt-5">
 		{#await upcoming_list}
-			<di class="flex flex-1 w-full justify-center items-center">
+			<di class="flex w-full flex-1 items-center justify-center">
 				<Spinner />
 			</di>
 		{:then list}
-			<div class="text-slate-500 -mb-5 flex w-full justify-between px-10">
+			<div class="mb-2 flex w-full justify-between px-10 text-slate-500">
 				<span>Upcoming</span>
 				<a
 					href="/hot"
-					class="hover:text-white duration-300 flex items-center gap-1 z-10"
+					class="z-10 flex items-center gap-1 duration-300 hover:text-white"
 				>
 					More <Icon icon="mdi:chevron-right" class="text-2xl" />
 				</a>
 			</div>
-			<Splide
-				options={{
-					arrows: true,
-					perPage: 'auto',
-					focus: 'left',
-					snap: true,
-					pagination: false,
-					gap: '12px',
-				}}
-				class="w-full overflow-hidden py-5 "
-			>
-				<!-- {void console.log(list) || ''} -->
+
+			<TinySlider gap="4px">
 				{#each list.results as el}
 					{#if !$show.includes(el.id)}
-						<SplideSlide class="flex aspect-[1/1.5]">
-							<DefaultCard
-								{el}
-								{data}
-								{add_show}
-								{delete_show}
-								shows={false}
-							/>
-						</SplideSlide>
+						<DefaultCard
+							{el}
+							{data}
+							{add_show}
+							{delete_show}
+							defaultClass="flex aspect-[1/1.5]"
+							shows={false}
+						/>
 					{/if}
 				{/each}
-			</Splide>
+				<svelte:fragment slot="controls" let:setIndex let:currentIndex>
+					<button
+						on:click={() => setIndex(currentIndex - 1)}
+						class="absolute top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
+					>
+						<Icon icon="mdi:chevron-left-circle" class="text-5xl" />
+					</button>
+					<button
+						on:click={() => setIndex(currentIndex + 1)}
+						class="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
+					>
+						<Icon
+							icon="mdi:chevron-right-circle"
+							class="text-5xl"
+						/>
+					</button>
+				</svelte:fragment>
+			</TinySlider>
 		{/await}
 	</div>
 
-	<div class="mt-5 sm:mt-0 mb-20">
+	<div class="relative mb-20 sm:mt-5">
 		{#await trending_list}
-			<di class="flex flex-1 w-full justify-center items-center">
+			<di class="flex w-full flex-1 items-center justify-center">
 				<Spinner />
 			</di>
 		{:then list}
-			<div class="text-slate-500 -mb-5 flex w-full justify-between px-10">
+			<div class="flex w-full justify-between px-10 text-slate-500">
 				<span>Trending</span>
 				<a
 					href="/trending"
-					class="hover:text-white duration-300 flex items-center gap-1 z-10"
+					class="z-10 flex items-center gap-1 duration-300 hover:text-white"
 				>
 					More <Icon icon="mdi:chevron-right" class="text-2xl" />
 				</a>
 			</div>
-			<Splide
-				options={{
-					arrows: true,
-					perPage: 'auto',
-					focus: 'left',
-					snap: true,
-					pagination: false,
-					gap: '12px',
-				}}
-				class="w-full overflow-hidden py-5 "
-			>
-				<!-- {void console.log(list) || ''} -->
+			<TinySlider gap="4px">
 				{#each list.results as el}
 					{#if !$show.includes(el.id)}
-						<SplideSlide class="flex aspect-[1/1.5]">
-							<DefaultCard
-								{el}
-								{data}
-								{add_show}
-								{delete_show}
-								shows={false}
-							/>
-						</SplideSlide>
+						<DefaultCard
+							{el}
+							{data}
+							{add_show}
+							{delete_show}
+							defaultClass="flex aspect-[1/1.5]"
+							shows={false}
+						/>
 					{/if}
 				{/each}
-			</Splide>
+
+				<svelte:fragment slot="controls" let:setIndex let:currentIndex>
+					<button
+						on:click={() => setIndex(currentIndex - 1)}
+						class="absolute top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
+					>
+						<Icon icon="mdi:chevron-left-circle" class="text-5xl" />
+					</button>
+					<button
+						on:click={() => setIndex(currentIndex + 1)}
+						class="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
+					>
+						<Icon
+							icon="mdi:chevron-right-circle"
+							class="text-5xl"
+						/>
+					</button>
+				</svelte:fragment>
+			</TinySlider>
 		{/await}
 	</div>
 
 	<!-- <div
-		class="flex justify-center sm:justify-start sm:w-[95%] min-h-[30vh] flex-wrap gap-3 border"
+		class="flex min-h-[30vh] flex-wrap justify-center gap-3 border sm:w-[95%] sm:justify-start"
 	>
 		asd
 	</div> -->

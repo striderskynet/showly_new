@@ -1,12 +1,12 @@
 <main
-	class="text-slate-500 text-base h-screen flex w-full p-10 sm:p-0 justify-center items-center"
+	class="flex h-screen w-full items-center justify-center p-10 text-base text-slate-500 sm:p-0"
 >
 	<br />
 	<br />
 	<br />
 	<br />
 	<br />
-	<div class="flex flex-col text-center items-center object-center">
+	<div class="flex flex-col items-center object-center text-center">
 		<h1 class="text-xl">Warning, this is an ongoing construction site!</h1>
 		<br />
 		<svg

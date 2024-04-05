@@ -1,16 +1,18 @@
 <script>
+	import { dev } from '$app/environment';
 	import Icon from '@iconify/svelte';
+	import { parse } from 'node-html-parser';
 	import { onMount } from 'svelte';
 	import Spinner from '../../components/UI/spinner.svelte';
 	import MovieCard from './../../components/movie_card.svelte';
 
 	import { Splide, SplideSlide } from '@splidejs/svelte-splide/components';
 	import '@splidejs/svelte-splide/css';
+
 	import dayjs from 'dayjs';
-	import { parse } from 'node-html-parser';
 
 	export let data;
-	let streaming_url = `https://www.whentostream.com/april-2024-streaming`,
+	let streaming_url = `https://www.whentostream.com/${dayjs().format('MMMM-YYYY').toLowerCase()}-streaming`,
 		streaming = Promise,
 		stream_loading = true;
 
@@ -18,13 +20,21 @@
 
 	const get_streaming_list = async () => {
 		stream_loading = true;
-		streaming = await fetch(streaming_url, { mode: 'cors' })
+
+		// let { data } = await axios.get('https://www.whentostream.com/');
+		// get_streaming_data(parse(data));
+
+		streaming = await fetch(streaming_url, {
+			mode: 'cors',
+			method: 'GET',
+			headers: { 'Content-Type': 'application/html' },
+		})
 			.then((x) => x.text())
 			.then((x) => get_streaming_data(parse(x)));
 
-		if (streaming) stream_loading = false;
+		stream_loading = false;
 		// console.log(await streaming);
-		// streaming = get_streaming_data(await streaming);
+		// streaming = get_streaming_data(streaming);
 		//console.log(await movies_streaming);
 
 		// let match = await movies_streaming.matchAll('href=".*?">(.*?)');
@@ -72,7 +82,7 @@
 
 		return temp;
 
-		console.log(temp);
+		if (dev) console.log(temp);
 	};
 
 	onMount(() => {
