@@ -1,7 +1,7 @@
 <script>
 	import { dev } from '$app/environment';
 	import Icon from '@iconify/svelte';
-	import { parse } from 'node-html-parser';
+	import parse from 'node-html-parser';
 	import { onMount } from 'svelte';
 	import Spinner from '../../components/UI/spinner.svelte';
 	import MovieCard from './../../components/movie_card.svelte';
@@ -12,8 +12,8 @@
 	import dayjs from 'dayjs';
 
 	export let data;
-	let streaming_url = `https://www.whentostream.com/${dayjs().format('MMMM-YYYY').toLowerCase()}-streaming`,
-		streaming = Promise,
+
+	let streaming = Promise,
 		stream_loading = true;
 
 	let nowPlaying_list, popular_list, upcoming_list;
@@ -21,16 +21,19 @@
 	const get_streaming_list = async () => {
 		stream_loading = true;
 
+		streaming = get_streaming_data(parse(await data.streaming));
+		//console.log(await data.streaming);
+
 		// let { data } = await axios.get('https://www.whentostream.com/');
 		// get_streaming_data(parse(data));
 
-		streaming = await fetch(streaming_url, {
-			mode: 'cors',
-			method: 'GET',
-			headers: { 'Content-Type': 'application/html' },
-		})
-			.then((x) => x.text())
-			.then((x) => get_streaming_data(parse(x)));
+		// streaming = await fetch(streaming_url, {
+		// 	mode: 'cors',
+		// 	method: 'GET',
+		// 	headers: { 'Content-Type': 'application/html' },
+		// })
+		// 	.then((x) => x.text())
+		// 	.then((x) => get_streaming_data(parse(x)));
 
 		stream_loading = false;
 		// console.log(await streaming);
@@ -99,17 +102,17 @@
 <div class="p-10">
 	<div class="mt-5 sm:mt-5">
 		{#if stream_loading}
-			<di class="flex flex-1 w-full justify-center items-center">
+			<di class="flex w-full flex-1 items-center justify-center">
 				<Spinner />
 			</di>
 		{:else}
-			{void console.log(streaming) || ''}
-			<div class="text-slate-500 -mb-5 flex w-full justify-between px-10">
+			<!-- {void console.log(streaming) || ''} -->
+			<div class="-mb-5 flex w-full justify-between px-10 text-slate-500">
 				<span>Streaming this month</span>
 				<a
 					href="https://whentostream.com"
 					target="_blank"
-					class="hover:text-white duration-300 flex items-center gap-1 z-10"
+					class="z-10 flex items-center gap-1 duration-300 hover:text-white"
 				>
 					Data from whentostream.com <Icon
 						icon="mdi:chevron-right"
@@ -127,7 +130,7 @@
 					pagination: false,
 					gap: '12px',
 				}}
-				class="w-full overflow-hidden py-5 "
+				class="w-full overflow-hidden py-5"
 			>
 				{#each streaming as el}
 					<SplideSlide class="flex aspect-[1/1.5]">
@@ -140,15 +143,15 @@
 
 	<div class="mt-5 sm:mt-5">
 		{#await nowPlaying_list}
-			<di class="flex flex-1 w-full justify-center items-center">
+			<di class="flex w-full flex-1 items-center justify-center">
 				<Spinner />
 			</di>
 		{:then list}
-			<div class="text-slate-500 -mb-5 flex w-full justify-between px-10">
+			<div class="-mb-5 flex w-full justify-between px-10 text-slate-500">
 				<span>Now in Theaters</span>
 				<!-- <a
 				href="/hot"
-				class="hover:text-white duration-300 flex items-center gap-1 z-10"
+				class="z-10 flex items-center gap-1 duration-300 hover:text-white"
 			>
 				More <Icon icon="mdi:chevron-right" class="text-2xl" />
 			</a> -->
@@ -162,7 +165,7 @@
 					pagination: false,
 					gap: '12px',
 				}}
-				class="w-full overflow-hidden py-5 "
+				class="w-full overflow-hidden py-5"
 			>
 				<!-- {void console.log(list) || ''} -->
 				{#each list.results as el}
@@ -176,15 +179,15 @@
 
 	<div class="mt-5 sm:mt-5">
 		{#await popular_list}
-			<di class="flex flex-1 w-full justify-center items-center">
+			<di class="flex w-full flex-1 items-center justify-center">
 				<Spinner />
 			</di>
 		{:then list}
-			<div class="text-slate-500 -mb-5 flex w-full justify-between px-10">
+			<div class="-mb-5 flex w-full justify-between px-10 text-slate-500">
 				<span>Popular</span>
 				<!-- <a
 				href="/hot"
-				class="hover:text-white duration-300 flex items-center gap-1 z-10"
+				class="z-10 flex items-center gap-1 duration-300 hover:text-white"
 			>
 				More <Icon icon="mdi:chevron-right" class="text-2xl" />
 			</a> -->
@@ -198,7 +201,7 @@
 					pagination: false,
 					gap: '12px',
 				}}
-				class="w-full overflow-hidden py-5 "
+				class="w-full overflow-hidden py-5"
 			>
 				<!-- {void console.log(list) || ''} -->
 				{#each list.results as el}
@@ -212,15 +215,15 @@
 
 	<div class="mt-5 sm:mt-5">
 		{#await upcoming_list}
-			<di class="flex flex-1 w-full justify-center items-center">
+			<di class="flex w-full flex-1 items-center justify-center">
 				<Spinner />
 			</di>
 		{:then list}
-			<div class="text-slate-500 -mb-5 flex w-full justify-between px-10">
+			<div class="-mb-5 flex w-full justify-between px-10 text-slate-500">
 				<span>Upcoming</span>
 				<!-- <a
 				href="/hot"
-				class="hover:text-white duration-300 flex items-center gap-1 z-10"
+				class="z-10 flex items-center gap-1 duration-300 hover:text-white"
 			>
 				More <Icon icon="mdi:chevron-right" class="text-2xl" />
 			</a> -->
@@ -234,7 +237,7 @@
 					pagination: false,
 					gap: '12px',
 				}}
-				class="w-full overflow-hidden py-5 "
+				class="w-full overflow-hidden py-5"
 			>
 				<!-- {void console.log(list) || ''} -->
 				{#each list.results as el}
