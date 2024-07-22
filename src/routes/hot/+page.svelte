@@ -22,7 +22,9 @@
 			cfg.api_hot_url.replaceAll(
 				'{{date}}',
 				dayjs().format('YYYY-MM-DD')
-			) + current_page,
+			) +
+				'&page=' +
+				current_page,
 			cfg.api_options
 		);
 
@@ -51,11 +53,11 @@
 	});
 </script>
 
-<div class="p-3 flex justify-center">
-	<div class="flex justify-center w-full flex-wrap gap-1">
+<div class="flex justify-center p-3">
+	<div class="flex w-full flex-wrap justify-center gap-1">
 		{#if loading && upcoming_list.length === 0}
 			<div
-				class="w-full h-screen flex justify-center items-center scale-150"
+				class="flex h-screen w-full scale-150 items-center justify-center"
 			>
 				<Spinner />
 			</div>
