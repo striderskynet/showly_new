@@ -29,7 +29,5 @@ export async function load({ fetch }) {
         streaming: movies_streaming
     };
 
-    return {
 
-    };
 }

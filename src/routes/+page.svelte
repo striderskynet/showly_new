@@ -87,7 +87,6 @@
 				list = [...list, e.show];
 			});
 			show.set(list);
-			//  console.log(list);
 		}
 
 		load_shows();

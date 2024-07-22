@@ -8,9 +8,9 @@ export const image_size = {
 };
 export const api_trending_url =
     //'https://api.themoviedb.org/3/trending/tv/week?language=en-US&page=';
-    'https://api.themoviedb.org/3/discover/tv?sort_by=popularity.desc&with_original_language=en&page=';
+    'https://api.themoviedb.org/3/discover/tv?sort_by=popularity.desc&with_original_language=en';
 export const api_hot_url =
-    'https://api.themoviedb.org/3/discover/tv?first_air_date.gte={{date}}&include_adult=false&include_null_first_air_dates=false&language=en-US&sort_by=popularity.desc&with_original_language=en&page=';
+    'https://api.themoviedb.org/3/discover/tv?first_air_date.gte={{date}}&include_adult=false&include_null_first_air_dates=false&language=en-US&sort_by=popularity.desc&with_original_language=en';
 export const api_show_id = 'https://api.themoviedb.org/3/tv/';
 export const api_show_search = 'https://api.themoviedb.org/3/search/tv?query=';
 
