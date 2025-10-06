@@ -53,11 +53,15 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Upcoming | Showly</title>
+</svelte:head>
+
 <div class="flex justify-center p-3">
-	<div class="flex w-full flex-wrap justify-center gap-1">
+	<div class="flex flex-wrap justify-center w-full gap-1">
 		{#if loading && upcoming_list.length === 0}
 			<div
-				class="flex h-screen w-full scale-150 items-center justify-center"
+				class="flex items-center justify-center w-full h-screen scale-150"
 			>
 				<Spinner />
 			</div>

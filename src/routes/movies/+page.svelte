@@ -99,15 +99,19 @@
 	//$: console.log(upcoming_list, data.upcoming_list);
 </script>
 
+<svelte:head>
+	<title>Movies | Showly</title>
+</svelte:head>
+
 <div class="p-10">
 	<div class="mt-5 sm:mt-5">
 		{#if stream_loading}
-			<di class="flex w-full flex-1 items-center justify-center">
+			<di class="flex items-center justify-center flex-1 w-full">
 				<Spinner />
 			</di>
 		{:else}
 			<!-- {void console.log(streaming) || ''} -->
-			<div class="-mb-5 flex w-full justify-between px-10 text-slate-500">
+			<div class="flex justify-between w-full px-10 -mb-5 text-slate-500">
 				<span>Streaming this month</span>
 				<a
 					href="https://whentostream.com"
@@ -130,7 +134,7 @@
 					pagination: false,
 					gap: '12px',
 				}}
-				class="w-full overflow-hidden py-5"
+				class="w-full py-5 overflow-hidden"
 			>
 				{#each streaming as el}
 					<SplideSlide class="flex aspect-[1/1.5]">
@@ -143,11 +147,11 @@
 
 	<div class="mt-5 sm:mt-5">
 		{#await nowPlaying_list}
-			<di class="flex w-full flex-1 items-center justify-center">
+			<di class="flex items-center justify-center flex-1 w-full">
 				<Spinner />
 			</di>
 		{:then list}
-			<div class="-mb-5 flex w-full justify-between px-10 text-slate-500">
+			<div class="flex justify-between w-full px-10 -mb-5 text-slate-500">
 				<span>Now in Theaters</span>
 				<!-- <a
 				href="/hot"
@@ -165,7 +169,7 @@
 					pagination: false,
 					gap: '12px',
 				}}
-				class="w-full overflow-hidden py-5"
+				class="w-full py-5 overflow-hidden"
 			>
 				<!-- {void console.log(list) || ''} -->
 				{#each list.results as el}
@@ -179,11 +183,11 @@
 
 	<div class="mt-5 sm:mt-5">
 		{#await popular_list}
-			<di class="flex w-full flex-1 items-center justify-center">
+			<di class="flex items-center justify-center flex-1 w-full">
 				<Spinner />
 			</di>
 		{:then list}
-			<div class="-mb-5 flex w-full justify-between px-10 text-slate-500">
+			<div class="flex justify-between w-full px-10 -mb-5 text-slate-500">
 				<span>Popular</span>
 				<!-- <a
 				href="/hot"
@@ -201,7 +205,7 @@
 					pagination: false,
 					gap: '12px',
 				}}
-				class="w-full overflow-hidden py-5"
+				class="w-full py-5 overflow-hidden"
 			>
 				<!-- {void console.log(list) || ''} -->
 				{#each list.results as el}
@@ -215,11 +219,11 @@
 
 	<div class="mt-5 sm:mt-5">
 		{#await upcoming_list}
-			<di class="flex w-full flex-1 items-center justify-center">
+			<di class="flex items-center justify-center flex-1 w-full">
 				<Spinner />
 			</di>
 		{:then list}
-			<div class="-mb-5 flex w-full justify-between px-10 text-slate-500">
+			<div class="flex justify-between w-full px-10 -mb-5 text-slate-500">
 				<span>Upcoming</span>
 				<!-- <a
 				href="/hot"
@@ -237,7 +241,7 @@
 					pagination: false,
 					gap: '12px',
 				}}
-				class="w-full overflow-hidden py-5"
+				class="w-full py-5 overflow-hidden"
 			>
 				<!-- {void console.log(list) || ''} -->
 				{#each list.results as el}

@@ -33,8 +33,12 @@
 	});
 </script>
 
-<div class="flex w-full justify-center sm:h-screen pb-20">
-	<div class="flex flex-col sm:flex-row sm:flex-wrap p-5 w-full gap-5">
+<svelte:head>
+	<title>Calendar | Showly</title>
+</svelte:head>
+
+<div class="flex justify-center w-full pb-20 sm:h-screen">
+	<div class="flex flex-col w-full gap-5 p-5 sm:flex-row sm:flex-wrap">
 		{#each Array(dayjs().daysInMonth()) as d, i}
 			{@const day = dayjs().date(i + 1)}
 			{@const today = dayjs().isSame(day)}
@@ -54,8 +58,8 @@
 					? 'bg-gray-700'
 					: 'bg-gray-900'} text-gray-300 flex items-start"
 			>
-				<div class="flex flex-col justify-center w-full items-center">
-					<span class="uppercase text-xs">{day.format('dddd')}</span>
+				<div class="flex flex-col items-center justify-center w-full">
+					<span class="text-xs uppercase">{day.format('dddd')}</span>
 					<span>{day.format('D')}</span>
 
 					{#if ordered_shows[today_formatted]}
@@ -69,7 +73,7 @@
 									: 'bg-sky-800'} text-white rounded p-1 text-sm mb-1 cursor-pointer hover:bg-sky-400 w-[100%] sm:mt-0 mt-2"
 							>
 								<span
-									class="event-name flex truncate text-pretty w-full text-clip line-clamp-1 justify-between"
+									class="flex justify-between w-full truncate event-name text-pretty text-clip line-clamp-1"
 								>
 									<span>{os.name}</span>
 									{#if Number(day.format('D')) > Number(dayjs().format('D'))}

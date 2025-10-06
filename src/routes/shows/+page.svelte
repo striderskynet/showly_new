@@ -59,6 +59,9 @@
 	});
 </script>
 
+<svelte:head>
+	<title>My Shows | Showly</title>
+</svelte:head>
 {#if data.session}
 	<div
 		class="p-5 flex justify-center w-full {data.session ||
