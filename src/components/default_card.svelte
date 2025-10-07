@@ -1,5 +1,4 @@
 <script>
-	import { dev } from '$app/environment';
 	import cfg from '$config/main';
 	import { show } from '$lib/shows.js';
 	import Icon from '@iconify/svelte';
@@ -17,7 +16,7 @@
 	export let shows = true;
 	export let defaultClass = '';
 
-	if (dev) console.log(el);
+	// if (dev) console.log(el, $show);
 
 	if (el.next_episode_to_air)
 		el.air_date = dayjs(el.next_episode_to_air.air_date);
@@ -25,7 +24,9 @@
 
 	// console.log(el.first_air_date, el.name);
 	el.address = cfg.show_address(el);
-	el.followed = $show.includes(el.id);
+	el.followed = $show.includes(String(el.id));
+
+	console.log(el, $show, $show.includes(el.id));
 </script>
 
 <a
@@ -48,30 +49,30 @@
 		<img
 			alt="Poster Imagen"
 			src={cfg.image_path + '780' + el.poster_path}
-			class="absolute object-contain w-full group-hover:scale-110 duration-300"
+			class="absolute object-contain w-full duration-300 group-hover:scale-110"
 		/>
 	{:else if el.backdrop_path}
 		<img
 			alt="Poster Imagen"
 			src={cfg.image_path + '780' + el.backdrop_path}
-			class="absolute object-cover w-full h-full group-hover:scale-110 duration-300"
+			class="absolute object-cover w-full h-full duration-300 group-hover:scale-110"
 		/>
 	{:else}
 		<div
-			class="flex w-full h-full justify-center items-center group-hover:blur duration-300"
+			class="flex items-center justify-center w-full h-full duration-300 group-hover:blur"
 		>
 			<Icon
 				icon="mdi:file-image-remove"
-				class="text-white w-20 text-9xl "
+				class="w-20 text-white text-9xl "
 			/>
 		</div>
 	{/if}
 
 	{#if el.vote_average}
 		<div
-			class="absolute top-0 right-0 bg-black bg-opacity-75 rounded-bl-lg h-6 text-white flex items-center px-1 gap-1 text-xs justify-center"
+			class="absolute top-0 right-0 flex items-center justify-center h-6 gap-1 px-1 text-xs text-white bg-black bg-opacity-75 rounded-bl-lg"
 		>
-			<Icon icon="mdi:star" class="text-yellow-500 text-xl" />
+			<Icon icon="mdi:star" class="text-xl text-yellow-500" />
 			<span class="">
 				{Number(el.vote_average).toFixed(
 					Number(el.vote_average) % 10 === 0 ? 0 : 1
@@ -89,54 +90,54 @@
 	>
 		{#if el.next_episode_to_air}
 			<div
-				class="flex flex-col opacity-0 group-hover:opacity-100 h-0 group-hover:h-12 duration-300"
+				class="flex flex-col h-0 duration-300 opacity-0 group-hover:opacity-100 group-hover:h-12"
 			>
 				<span
-					class="line-clamp-1 text-clip text-pretty truncate px-5 text-xs text-center"
+					class="px-5 text-xs text-center truncate line-clamp-1 text-clip text-pretty"
 				>
 					<!-- {el.next_episode_to_air.air_date} -->
 					S{el.next_episode_to_air.season_number} E{el
 						.next_episode_to_air.episode_number}
 				</span>
 				<span
-					class="line-clamp-1 text-clip text-pretty truncate px-5 text-xs text-center"
+					class="px-5 text-xs text-center truncate line-clamp-1 text-clip text-pretty"
 				>
 					{el.next_episode_to_air.name}
 				</span>
-				<hr class="border-gray-800 my-1" />
+				<hr class="my-1 border-gray-800" />
 			</div>
 		{:else if el.status}
 			<div
-				class="flex flex-col opacity-0 group-hover:opacity-100 h-0 group-hover:h-6 duration-300"
+				class="flex flex-col h-0 duration-300 opacity-0 group-hover:opacity-100 group-hover:h-6"
 			>
 				<span
-					class="line-clamp-1 text-clip text-pretty truncate px-5 text-xs text-center"
+					class="px-5 text-xs text-center truncate line-clamp-1 text-clip text-pretty"
 				>
 					{el.status}
 				</span>
-				<hr class="border-gray-800 my-1" />
+				<hr class="my-1 border-gray-800" />
 			</div>
 		{/if}
 
-		<span class="line-clamp-1 text-clip text-pretty truncate text-center">
+		<span class="text-center truncate line-clamp-1 text-clip text-pretty">
 			{el.name}
 		</span>
 	</div>
 
 	<span
-		class="absolute bg-black bg-opacity-75 text-white h-6 items-center flex line-clamp-1 text-clip text-pretty truncate px-2 text-sm text-center rounded-br-lg"
+		class="absolute flex items-center h-6 px-2 text-sm text-center text-white truncate bg-black bg-opacity-75 rounded-br-lg line-clamp-1 text-clip text-pretty"
 	>
-		<span class="group-hover:hidden duration-300 flex">
+		<span class="flex duration-300 group-hover:hidden">
 			{el?.air_date?.fromNow()}</span
 		>
-		<span class="group-hover:flex duration-300 hidden">
+		<span class="hidden duration-300 group-hover:flex">
 			{el?.air_date?.format('MMMM D')}</span
 		>
 	</span>
 
 	{#if data.session}
 		<span
-			class="absolute w-full h-full justify-center items-center flex sm:group-hover:opacity-100 sm:opacity-0 duration-300"
+			class="absolute flex items-center justify-center w-full h-full duration-300 sm:group-hover:opacity-100 sm:opacity-0"
 		>
 			{#if el.followed}
 				<a
@@ -150,7 +151,7 @@
 				>
 					<Icon
 						icon="mdi:bookmark-remove"
-						class="text-4xl sm:text-7xl text-red-500 hover:text-rose-800 rounded duration-300"
+						class="text-4xl text-red-500 duration-300 rounded sm:text-7xl hover:text-rose-800"
 					/>
 				</a>
 			{:else}
@@ -166,7 +167,7 @@
 				>
 					<Icon
 						icon="mdi:bookmark-plus"
-						class="text-4xl sm:text-7xl text-slate-200 hover:text-sky-500 rounded duration-300"
+						class="text-4xl duration-300 rounded sm:text-7xl text-slate-200 hover:text-sky-500"
 					/>
 				</a>
 			{/if}
