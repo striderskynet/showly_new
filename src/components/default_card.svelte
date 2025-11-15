@@ -1,4 +1,5 @@
 <script>
+	import { dev } from '$app/environment';
 	import cfg from '$config/main';
 	import { show } from '$lib/shows.js';
 	import Icon from '@iconify/svelte';
@@ -26,7 +27,7 @@
 	el.address = cfg.show_address(el);
 	el.followed = $show.includes(String(el.id));
 
-	console.log(el, $show, $show.includes(el.id));
+	if (dev) console.log(el, $show, $show.includes(el.id));
 </script>
 
 <a
