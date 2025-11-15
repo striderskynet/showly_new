@@ -48,13 +48,13 @@
 	/>
 </svelte:head>
 
-<div class="w-full relative">
+<div class="relative w-full">
 	<a
 		on:click={() => {
 			hide_front ^= true;
 		}}
 		href={'#'}
-		class="hidden sm:flex absolute right-5 top-2 group z-50 hover:bg-rose-500 hover:text-black p-1 rounded-lg"
+		class="absolute z-50 hidden p-1 rounded-lg sm:flex right-5 top-2 group hover:bg-rose-500 hover:text-black"
 	>
 		<Icon
 			icon={!hide_front ? 'mdi:square-outline' : 'mdi:square-off-outline'}
@@ -66,7 +66,7 @@
 		style="background: #ddd center / cover no-repeat url({cfg.image_path +
 			'1280' +
 			data.show.backdrop_path})"
-		class="w-full min-h-screen p-10 justify-center items-center flex relative"
+		class="relative flex items-center justify-center w-full min-h-screen p-10"
 	>
 		<div
 			class="absolute w-full h-52 bg-gradient-to-t from-black from-20% bottom-0"
@@ -84,11 +84,11 @@
 				: 'opacity-100'}  duration-500 text-white translate-y-28 sm:translate-y-1/4 flex flex-col max-w-[80rem] w-full p-5 rounded-xl bg-black bg-opacity-30 backdrop-blur-sm"
 		>
 			<div class="flex">
-				<div class="flex flex-col sm:w-2/3 gap-5">
+				<div class="flex flex-col gap-5 sm:w-2/3">
 					<div
-						class="flex flex-col sm:flex-row justify-left items-center gap-5 sm:gap-0"
+						class="flex flex-col items-center gap-5 sm:flex-row justify-left sm:gap-0"
 					>
-						<div class="font-outline-2 sm:text-4xl text-xl">
+						<div class="text-xl font-outline-2 sm:text-4xl">
 							{data.show.name}
 						</div>
 
@@ -101,12 +101,12 @@
 						/>
 					</div>
 					<div
-						class="text-slate-300 gap-2 flex w-full text-sm ml-5 -mt-3 justify-center sm:justify-normal flex-wrap"
+						class="flex flex-wrap justify-center w-full gap-2 ml-5 -mt-3 text-sm text-slate-300 sm:justify-normal"
 					>
 						{data.show?.tagline}
 					</div>
 					<div
-						class="text-slate-300 gap-2 flex w-full text-xs justify-center sm:justify-normal flex-wrap"
+						class="flex flex-wrap justify-center w-full gap-2 text-xs text-slate-300 sm:justify-normal"
 					>
 						<span
 							>{dayjs(data.show.first_air_date).format(
@@ -114,7 +114,7 @@
 							)}</span
 						>
 						{#if data.show.adult}
-							<span class="border-l border-l-slate-700 pl-2"
+							<span class="pl-2 border-l border-l-slate-700"
 								>18+</span
 							>
 						{/if}
@@ -133,13 +133,13 @@
 							{data.show.status}
 						</span>
 
-						<span class="border-l border-l-slate-700 pl-2"
+						<span class="pl-2 border-l border-l-slate-700"
 							>{data.show.number_of_seasons > 1
 								? data.show.number_of_seasons + ' seasons'
 								: data.show.number_of_seasons + ' season'}</span
 						>
 						<span
-							class="border-l border-l-slate-700 pl-2 gap-1 flex"
+							class="flex gap-1 pl-2 border-l border-l-slate-700"
 						>
 							{#each data.show.genres as g, i}
 								<span>
@@ -155,7 +155,7 @@
 
 					{#if data.show.next_episode_to_air}
 						<div
-							class="text-slate-300 gap-2 flex w-full text-xs justify-center sm:justify-normal flex-wrap"
+							class="flex flex-wrap justify-center w-full gap-2 text-xs text-slate-300 sm:justify-normal"
 						>
 							<span class="font-bold">Next Episode:</span>
 							<span class="text-slate-400">
@@ -170,7 +170,7 @@
 						</div>
 					{/if}
 
-					<div class="flex sm:flex-row flex-col gap-2 items-center">
+					<div class="flex flex-col items-center gap-2 sm:flex-row">
 						{#if data.session}
 							{#if $show.includes(data.show.id)}
 								<a
@@ -181,7 +181,7 @@
 										data.session.user.id,
 										data.show.id
 									)}
-									class="bg-red-500 flex max-w-max px-2 pe-4 py-1 items-center gap-2 rounded-lg hover:bg-red-700 active:bg-red-300"
+									class="flex items-center gap-2 px-2 py-1 bg-red-500 rounded-lg max-w-max pe-4 hover:bg-red-700 active:bg-red-300"
 								>
 									<Icon
 										icon="mdi:bookmark-remove"
@@ -198,7 +198,7 @@
 										data.session.user.id,
 										data.show.id
 									)}
-									class="bg-sky-500 flex max-w-max px-2 pe-4 py-1 items-center gap-2 rounded-lg hover:bg-sky-700 active:bg-sky-300"
+									class="flex items-center gap-2 px-2 py-1 rounded-lg bg-sky-500 max-w-max pe-4 hover:bg-sky-700 active:bg-sky-300"
 								>
 									<Icon
 										icon="mdi:bookmark-add"
@@ -211,7 +211,7 @@
 							<a
 								data-sveltekit-preload-data="false"
 								href={'/login'}
-								class="bg-sky-500 flex max-w-max px-2 pe-4 py-1 items-center gap-2 rounded-lg hover:bg-sky-700 active:bg-sky-300"
+								class="flex items-center gap-2 px-2 py-1 rounded-lg bg-sky-500 max-w-max pe-4 hover:bg-sky-700 active:bg-sky-300"
 							>
 								<Icon icon="mdi:google" class="text-3xl" />
 								Login to follow
@@ -224,7 +224,7 @@
 									href={'https://www.youtube.com/watch?v=' +
 										data.show.videos.results.at(-1).key}
 									target="_blank"
-									class="text-gray-400 hover:text-white duration-300 ml-2"
+									class="ml-2 text-gray-400 duration-300 hover:text-white"
 								>
 									<Icon
 										icon="mdi:film-reel"
@@ -238,7 +238,7 @@
 								<a
 									href={data.show.homepage}
 									target="_blank"
-									class="text-gray-400 hover:text-white duration-300 ml-2"
+									class="ml-2 text-gray-400 duration-300 hover:text-white"
 								>
 									<Icon icon="mdi:web" class="text-3xl" />
 									<!-- <Tooltip>Go to Homepage</Tooltip> -->
@@ -252,7 +252,7 @@
 										torrent_modal = true;
 									}}
 									target="_blank"
-									class="text-gray-400 hover:text-white duration-300 ml-2"
+									class="ml-2 text-gray-400 duration-300 hover:text-white"
 								>
 									<Icon icon="mdi:magnet" class="text-3xl" />
 									<!-- <Tooltip>Go to Homepage</Tooltip> -->
@@ -261,13 +261,13 @@
 						</div>
 					</div>
 					<div
-						class="text-slate-200 ml-2 w-full sm:text-base text-xs"
+						class="w-full ml-2 text-xs text-slate-200 sm:text-base"
 					>
 						{data.show.overview}
 					</div>
 
 					{#if data.show.created_by?.length > 0}
-						<div class="text-xs flex gap-2">
+						<div class="flex gap-2 text-xs">
 							<span>Created by:</span>
 							<span class="flex gap-3 text-gray-400">
 								{#each data.show.created_by as director}
@@ -281,11 +281,11 @@
 							</span>
 						</div>
 					{/if}
-					<div class="mt-5 flex gap-5 flex-wrap flex-grow">
+					<div class="flex flex-wrap flex-grow gap-5 mt-5">
 						{#each data.show.credits.cast as cast, i}
 							{#if i <= 5}
 								<div
-									class="flex flex-col justify-center items-center"
+									class="flex flex-col items-center justify-center"
 								>
 									<a
 										href={'/cast/' + cast.id}
@@ -303,11 +303,11 @@
 													'300' +
 													cast.profile_path}
 												alt={cast.name}
-												class="absolute w-full h-full hover:scale-125 object-cover duration-500"
+												class="absolute object-cover w-full h-full duration-500 hover:scale-125"
 											/>
 										{:else}
 											<div
-												class="absolute w-full h-full flex justify-center items-center"
+												class="absolute flex items-center justify-center w-full h-full"
 											>
 												<Icon
 													icon={cast.gender === 0
@@ -320,10 +320,10 @@
 											</div>
 										{/if}
 									</a>
-									<span class="text-sm mt-2">{cast.name}</span
+									<span class="mt-2 text-sm">{cast.name}</span
 									>
 									<span
-										class="text-xs text-gray-500 text-center mt-1"
+										class="mt-1 text-xs text-center text-gray-500"
 									>
 										{@html cast.character.replaceAll(
 											'/',
@@ -338,7 +338,7 @@
 				</div>
 
 				{#if data.show.main_poster?.file_path}
-					<div class="hidden sm:flex flex-col w-1/3 gap-5 items-end">
+					<div class="flex-col items-end hidden w-1/3 gap-5 sm:flex">
 						<img
 							src={cfg.image_path +
 								'300' +
@@ -361,7 +361,7 @@
 						pagination: false,
 						gap: '12px',
 					}}
-					class="w-full overflow-hidden p-2"
+					class="w-full p-2 overflow-hidden"
 				>
 					{#each data.show.seasons as season}
 						<SplideSlide class="flex flex-col items-center gap-1">
@@ -374,22 +374,22 @@
 										src={cfg.image_path +
 											'780' +
 											season.poster_path}
-										class="absolute object-contain w-full group-hover:blur duration-300"
+										class="absolute object-contain w-full duration-300 group-hover:blur"
 									/>
 								{:else}
 									<div
-										class="flex w-full h-full justify-center items-center group-hover:blur duration-300"
+										class="flex items-center justify-center w-full h-full duration-300 group-hover:blur"
 									>
 										<Icon
 											icon="mdi:file-image-remove"
-											class="text-white w-20 text-9xl "
+											class="w-20 text-white text-9xl "
 										/>
 									</div>
 								{/if}
 
 								{#if season.vote_average}
 									<span
-										class="absolute top-2 right-2 bg-sky-800 text-white px-2 rounded-lg"
+										class="absolute px-2 text-white rounded-lg top-2 right-2 bg-sky-800"
 									>
 										{season.vote_average}
 									</span>
@@ -397,14 +397,14 @@
 
 								{#if season.air_date}
 									<span
-										class="absolute top-2 left-2 bg-sky-800 text-white px-2 rounded-lg"
+										class="absolute px-2 text-white rounded-lg top-2 left-2 bg-sky-800"
 									>
 										{dayjs(season.air_date).format('YYYY')}
 									</span>
 								{/if}
 							</card>
 							<span>{season.name}</span>
-							<span class="text-xs -mt-2 text-gray-400">
+							<span class="-mt-2 text-xs text-gray-400">
 								{season.episode_count} episodes
 							</span>
 						</SplideSlide>
@@ -424,7 +424,7 @@
 							pagination: false,
 							gap: '12px',
 						}}
-						class="w-full overflow-hidden p-2"
+						class="w-full p-2 overflow-hidden"
 					>
 						{#each data.show.recommendations.results as r_show}
 							<SplideSlide
@@ -443,22 +443,22 @@
 											src={cfg.image_path +
 												'780' +
 												r_show.poster_path}
-											class="absolute object-contain w-full group-hover:blur duration-300 group-hover:backdrop-blur-sm"
+											class="absolute object-contain w-full duration-300 group-hover:blur group-hover:backdrop-blur-sm"
 										/>
 									{:else}
 										<div
-											class="flex w-full h-full justify-center items-center group-hover:blur duration-300"
+											class="flex items-center justify-center w-full h-full duration-300 group-hover:blur"
 										>
 											<Icon
 												icon="mdi:file-image-remove"
-												class="text-white w-20 text-9xl "
+												class="w-20 text-white text-9xl "
 											/>
 										</div>
 									{/if}
 
 									{#if r_show.vote_average}
 										<span
-											class="absolute top-2 right-2 bg-sky-800 text-white px-2 rounded-lg"
+											class="absolute px-2 text-white rounded-lg top-2 right-2 bg-sky-800"
 										>
 											{Math.round(r_show.vote_average)}
 										</span>
@@ -466,7 +466,7 @@
 
 									{#if r_show.first_air_date}
 										<span
-											class="absolute top-2 left-2 bg-sky-800 text-white px-2 rounded-lg"
+											class="absolute px-2 text-white rounded-lg top-2 left-2 bg-sky-800"
 										>
 											{dayjs(
 												r_show.first_air_date
@@ -484,7 +484,7 @@
 	</div>
 </div>
 
-{#if data.show.torrent_list.torrents}
+{#if data.show?.torrent_list?.torrents}
 	<button
 		on:click={() => {
 			torrent_modal = false;
@@ -498,7 +498,7 @@
 			class="absolute overflow-hidden flex flex-col w-full rounded-xl shadow-xl max-w-7xl bg-gray-800 text-slate-300 top-[25%]"
 		>
 			<h1
-				class="uppercase w-full flex bg-slate-700 pb-2 pt-3 px-5 justify-between items-center"
+				class="flex items-center justify-between w-full px-5 pt-3 pb-2 uppercase bg-slate-700"
 			>
 				Torrent list
 				<a
@@ -506,12 +506,12 @@
 					on:click|preventDefault={() => {
 						torrent_modal = false;
 					}}
-					class="hover:bg-slate-300 hover:text-slate-600 rounded-xl p-1"
+					class="p-1 hover:bg-slate-300 hover:text-slate-600 rounded-xl"
 				>
 					<Icon icon="mdi:close" class="text-2xl" />
 				</a>
 			</h1>
-			<div class="p-5 flex flex-col gap-1">
+			<div class="flex flex-col gap-1 p-5">
 				{#each data.show.torrent_list.torrents as t, i}
 					{#if t.title.includes('MeGusta')}
 						<div
@@ -523,16 +523,16 @@
 							on:click={() => {
 								navigator.clipboard.writeText(t.magnet_url);
 							}}
-							class="flex items-center w-full bg-slate-700 px-2 py-1 rounded hover:bg-slate-600 cursor-pointer duration-300 justify-between"
+							class="flex items-center justify-between w-full px-2 py-1 duration-300 rounded cursor-pointer bg-slate-700 hover:bg-slate-600"
 							title="Click to Copy Magnet to Clipboard"
 						>
 							<span>
 								{t.title}
-								<span class="text-slate-500 text-xs">
+								<span class="text-xs text-slate-500">
 									[S{t.season}.E{t.episode}]
 								</span>
 							</span>
-							<div class="flex gap-2 items-center">
+							<div class="flex items-center gap-2">
 								<span class="text-xs text-slate-400">
 									{dayjs.unix(t.date_released_unix).fromNow()}
 								</span>
@@ -546,7 +546,7 @@
 									href={t.torrent_url}
 									alt="Torrent URL"
 									title="Torrent URL"
-									class="hover:bg-slate-300 hover:text-slate-600 p-1 rounded-xl"
+									class="p-1 hover:bg-slate-300 hover:text-slate-600 rounded-xl"
 								>
 									<Icon
 										icon="simple-icons:utorrent"
@@ -557,7 +557,7 @@
 									href={t.magnet_url}
 									alt="Magnet URL"
 									title="Magnet URL"
-									class="hover:bg-slate-300 hover:text-slate-600 p-1 rounded-xl"
+									class="p-1 hover:bg-slate-300 hover:text-slate-600 rounded-xl"
 								>
 									<Icon icon="mdi:magnet" class="text-2xl" />
 								</a>
@@ -565,18 +565,18 @@
 						</div>{/if}
 				{/each}
 				<div
-					class="w-full flex justify-end text-sm text-slate-500 mt-5 items-center gap-3"
+					class="flex items-center justify-end w-full gap-3 mt-5 text-sm text-slate-500"
 				>
 					You can find more torrents in the following sites:
 					<div class="flex gap-2 mt-2 text-base">
 						<a
 							href="https://torrentgalaxy.to/"
-							class="text-slate-200 hover:text-slate-100 hover:bg-sky-600 bg-sky-800 px-2 py-1 rounded duration-300"
+							class="px-2 py-1 duration-300 rounded text-slate-200 hover:text-slate-100 hover:bg-sky-600 bg-sky-800"
 							>torrentgalaxy.to</a
 						>
 						<a
 							href="https://eztvx.to/"
-							class="text-slate-200 hover:text-slate-100 hover:bg-sky-600 bg-sky-800 px-2 py-1 rounded duration-300"
+							class="px-2 py-1 duration-300 rounded text-slate-200 hover:text-slate-100 hover:bg-sky-600 bg-sky-800"
 							>eztvx.to</a
 						>
 					</div>
