@@ -430,16 +430,14 @@
 							<div class="flex items-center gap-1">
 								<span
 									class="text-[9px] text-slate-500 uppercase font-bold"
-									>Stock:</span
+									>Stock / Unidad:</span
 								>
 								<span
 									class="text-xs font-bold {item.amount > 0
 										? 'text-slate-300'
 										: 'text-red-500'}"
 								>
-									{item.amount}
-
-									{item.UM}
+									{item.amount} / {item.UM}
 								</span>
 							</div>
 						</div>
@@ -509,7 +507,7 @@
 							<a
 								href={`https://www.truper.com/ficha_tecnica/controllers/index.php?codigo=${item.code}&origen=nal`}
 								target="_blank"
-								class="flex items-center justify-center w-full gap-2 py-1 text-[11px] text-slate-400 hover:text-red-400 transition-colors border border-transparent hover:border-red-900/30 rounded"
+								class="flex items-center justify-center w-full gap-2 py-1 text-[11px] text-slate-400 hover:text-red-400 transition-colors rounded"
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
