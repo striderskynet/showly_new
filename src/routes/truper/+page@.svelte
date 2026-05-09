@@ -2,6 +2,20 @@
 	import inventory from './inventory_april_3.json';
 
 	let searchTerm = '';
+	let debouncedSearch = '';
+	let cart = [];
+	let isCartOpen = false;
+	let itemsToShow = 50;
+	let timer;
+
+	// Debounce de 1 segundo
+	$: {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			debouncedSearch = searchTerm;
+			itemsToShow = 50;
+		}, 1000);
+	}
 
 	function normalizeText(text) {
 		return (
@@ -13,335 +27,303 @@
 		);
 	}
 
-	$: filteredItems = inventory.filter((item) => {
-		if (!searchTerm.trim()) return true;
-		const keywords = normalizeText(searchTerm).split(/\s+/);
-		const itemContent = normalizeText(
-			`${item?.code} ${item?.family} ${item?.description}`,
-		);
+	$: filteredResults = inventory.filter((item) => {
+		const query = debouncedSearch.trim();
+		if (query.length < 3) return true;
+		const keywords = normalizeText(query).split(/\s+/);
+		const itemContent = normalizeText(`${item?.code} ${item?.family} ${item?.description}`);
 		return keywords.every((word) => itemContent.includes(word));
 	});
+
+	$: displayItems = filteredResults.slice(0, itemsToShow);
+
+	function handleScroll() {
+		const { scrollHeight, scrollTop, clientHeight } = document.documentElement;
+		if (scrollTop + clientHeight >= scrollHeight - 200) {
+			if (itemsToShow < filteredResults.length) itemsToShow += 40;
+		}
+	}
+
+	function addToCart(item) {
+		const index = cart.findIndex((i) => i.code === item.code);
+		if (index !== -1) {
+			cart[index].quantity += 1;
+			cart = [...cart];
+		} else {
+			cart = [...cart, { ...item, quantity: 1 }];
+		}
+	}
+
+	function removeFromCart(code) {
+		cart = cart.filter((i) => i.code !== code);
+	}
 
 	function formatCurrency(value, symbol) {
 		return `${symbol}${value?.toFixed(2)}`;
 	}
-
-	// Manejador para cuando la imagen no existe en el servidor de Truper
-	function handleImageError(e) {
-		e.target.style.display = 'none';
-	}
 </script>
+
+<svelte:window on:scroll={handleScroll} />
 
 <svelte:head>
 	<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </svelte:head>
 
-<div class="app-wrapper">
-	<div class="search-container">
-		<header>
-			<div class="">
-				<input
-					type="text"
-					placeholder="Buscar por código, familia o descripción..."
-					bind:value={searchTerm}
-				/>
-				{#if searchTerm}
-					<button class="clear-btn" on:click={() => (searchTerm = '')}
-						>×</button
-					>
+<div class="min-h-screen bg-[#0f172a] text-slate-200 font-sans">
+	<!-- BOTÓN CARRITO FLOTANTE -->
+	<button
+		class="fixed z-50 flex items-center justify-center p-4 text-white transition-all transform bg-orange-600 rounded-full shadow-2xl bottom-3 lg:bottom-auto lg:top-6 right-6 hover:bg-orange-500 hover:scale-110"
+		on:click={() => (isCartOpen = !isCartOpen)}
+	>
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="24"
+			height="24"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			><circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path
+				d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+			/></svg
+		>
+		{#if cart.length > 0}
+			<span
+				class="absolute px-2 py-1 text-xs font-bold text-orange-600 bg-white border-2 border-orange-600 rounded-full -top-1 -right-1"
+			>
+				{cart.reduce((acc, i) => acc + i.quantity, 0)}
+			</span>
+		{/if}
+	</button>
+
+	<!-- DRAWER DEL CARRITO -->
+	{#if isCartOpen}
+		<div
+			class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+			on:click={() => (isCartOpen = false)}
+		></div>
+	{/if}
+
+	<aside
+		class="fixed top-0 right-0 h-full w-full max-w-md bg-[#1e293b] z-[70] shadow-2xl transition-transform duration-300 ease-in-out transform {isCartOpen
+			? 'translate-x-0'
+			: 'translate-x-full'} border-l border-slate-700"
+	>
+		<div class="flex flex-col h-full">
+			<div class="p-6 border-b border-slate-700 flex justify-between items-center bg-[#161e2e]">
+				<h2 class="flex items-center gap-2 text-xl font-bold">
+					<span class="text-orange-500">🛒</span> Tu Carrito
+				</h2>
+				<button
+					class="text-2xl text-slate-400 hover:text-white"
+					on:click={() => (isCartOpen = false)}>&times;</button
+				>
+			</div>
+
+			<div class="flex-1 p-4 space-y-4 overflow-y-auto">
+				{#if cart.length === 0}
+					<div class="py-20 text-center opacity-40">
+						<p>No hay productos aún</p>
+					</div>
+				{:else}
+					{#each cart as item}
+						<div
+							class="flex gap-4 bg-[#0f172a] p-3 rounded-xl border border-slate-700 items-center"
+						>
+							<img
+								src="https://www.truper.com/admin/images/ch/{item.code}.jpg"
+								alt=""
+								class="object-contain w-16 h-16 p-1 bg-white rounded-lg"
+							/>
+							<div class="flex-1 min-w-0">
+								<h4 class="text-sm font-bold text-orange-400 truncate">{item.code}</h4>
+								<p class="text-xs text-slate-400 line-clamp-2">{item.description}</p>
+								<div class="flex items-center justify-between mt-1">
+									<span class="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-300"
+										>Cant: {item.quantity}</span
+									>
+									<span class="text-sm font-bold text-green-400"
+										>{formatCurrency(item.usd, '$')}</span
+									>
+								</div>
+							</div>
+							<button
+								on:click={() => removeFromCart(item.code)}
+								class="p-2 text-slate-500 hover:text-red-500"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="18"
+									height="18"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									><path
+										d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
+									/></svg
+								>
+							</button>
+						</div>
+					{/each}
 				{/if}
 			</div>
 
-			<div class="flex justify-between gap-2">
-				<div class="stats">
-					Encontrados: <strong>{filteredItems.length}</strong> productos
+			<div class="p-6 border-t border-slate-700 bg-[#161e2e]">
+				<div class="flex justify-between mb-4 text-lg font-bold">
+					<span>Total USD:</span>
+					<span class="text-green-400"
+						>{formatCurrency(
+							cart.reduce((sum, i) => sum + i.usd * i.quantity, 0),
+							'$'
+						)}</span
+					>
 				</div>
-				<div class="stats">April 3</div>
+				<button
+					class="w-full py-3 font-bold transition-colors bg-orange-600 hover:bg-orange-500 rounded-xl"
+				>
+					Finalizar Pedido
+				</button>
+			</div>
+		</div>
+	</aside>
+
+	<!-- CONTENIDO PRINCIPAL -->
+	<main class="px-4 py-8 mx-auto max-w-7xl">
+		<header class="sticky z-40 mb-12 top-0 py-4 border-b-4 border-slate-700 bg-[#0f172a]">
+			<div class="relative max-w-2xl mx-auto shadow-2xl">
+				<input
+					type="text"
+					placeholder="Buscar código, nombre..."
+					class="w-full bg-[#1e293b] border-2 border-slate-700 focus:border-orange-500 rounded-lg py-4 px-8 text-lg outline-none transition-all shadow-inner"
+					bind:value={searchTerm}
+				/>
+				{#if searchTerm !== debouncedSearch}
+					<div class="absolute -translate-y-1/2 right-6 top-1/2">
+						<div
+							class="w-5 h-5 border-2 border-orange-500 rounded-full animate-spin border-t-transparent"
+						></div>
+					</div>
+				{/if}
+			</div>
+			<div class="mt-3 text-sm text-center text-slate-500">
+				Mostrando {displayItems.length} de {filteredResults.length} productos
 			</div>
 		</header>
 
-		<div class="grid">
-			{#each filteredItems as item}
-				<div class="card">
-					<div class="image-box">
+		<!-- GRID DE 4 COLUMNAS -->
+		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+			{#each displayItems as item (item.code)}
+				<div
+					class="group bg-[#1e293b] border border-slate-700 rounded-2xl overflow-hidden flex flex-col hover:border-orange-500/50 transition-all hover:shadow-[0_0_20px_rgba(249,115,22,0.1)]"
+				>
+					<div class="relative flex items-center justify-center h-48 p-6 bg-white">
 						<img
 							src="https://www.truper.com/admin/images/ch/{item.code}.jpg"
 							alt={item.description}
-							on:error={handleImageError}
+							class="object-contain max-w-full max-h-full transition-transform duration-300 group-hover:scale-110"
+							on:error={(e) => (e.target.style.opacity = 0.3)}
 						/>
+						<div
+							class="absolute top-2 left-2 bg-[#0f172a] px-2 py-1 rounded text-[10px] font-bold text-slate-400"
+						>
+							{item.family}
+						</div>
 					</div>
 
-					<div class="content">
-						<div class="card-header">
-							<span class="code">{item.code}</span>
-							<span class="family">{item.family}</span>
+					<div class="flex flex-col flex-1 p-5">
+						<div class="flex items-start justify-between mb-2">
+							<span class="font-mono text-lg font-bold text-orange-500">{item.code}</span>
+							<span class="text-[10px] text-slate-500 uppercase">{item.UM}</span>
 						</div>
-						<h3 class="description">{item.description}</h3>
-					</div>
 
-					<div class="card-footer">
-						<div class="stock-info">
-							<span class="label">Stock disponible</span>
-							<span class="amount">{item.amount} {item.UM}</span>
-						</div>
-						<div class="prices">
-							<div class="price-tag usd">
-								<small>USD</small>
-								<span>{formatCurrency(item.usd, '$')}</span>
+						<h3 class="h-10 mb-4 text-sm italic font-medium leading-snug line-clamp-2">
+							{item.description}
+						</h3>
+
+						<div class="mt-auto space-y-3">
+							<div class="flex gap-2">
+								<div
+									class="flex-1 p-2 text-center border rounded-lg bg-green-900/30 border-green-700/50"
+								>
+									<div class="text-[10px] text-green-500 uppercase font-bold">USD</div>
+									<div class="font-bold text-green-400">{formatCurrency(item.usd, '$')}</div>
+								</div>
+								<div
+									class="flex-1 p-2 text-center border rounded-lg bg-blue-900/30 border-blue-700/50"
+								>
+									<div class="text-[10px] text-blue-500 uppercase font-bold">EUR</div>
+									<div class="font-bold text-blue-300">{formatCurrency(item.euro, '€')}</div>
+								</div>
 							</div>
-							<div class="price-tag euro">
-								<small>EUR</small>
-								<span>{formatCurrency(item.euro, '€')}</span>
-							</div>
-						</div>
-						<a
-							class="flex items-center justify-center w-full h-10 gap-2 px-2 mt-5 text-white border border-gray-700 rounded-lg hover:bg-gray-800"
-							href={`https://www.truper.com/ficha_tecnica/controllers/index.php?codigo=${item.code}&origen=nal`}
-							><svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								><path
-									fill="#ef5350"
-									d="M13 9h5.5L13 3.5zM6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m4.93 10.44c.41.9.93 1.64 1.53 2.15l.41.32c-.87.16-2.07.44-3.34.93l-.11.04l.5-1.04c.45-.87.78-1.66 1.01-2.4m6.48 3.81c.18-.18.27-.41.28-.66c.03-.2-.02-.39-.12-.55c-.29-.47-1.04-.69-2.28-.69l-1.29.07l-.87-.58c-.63-.52-1.2-1.43-1.6-2.56l.04-.14c.33-1.33.64-2.94-.02-3.6a.85.85 0 0 0-.61-.24h-.24c-.37 0-.7.39-.79.77c-.37 1.33-.15 2.06.22 3.27v.01c-.25.88-.57 1.9-1.08 2.93l-.96 1.8l-.89.49c-1.2.75-1.77 1.59-1.88 2.12c-.04.19-.02.36.05.54l.03.05l.48.31l.44.11c.81 0 1.73-.95 2.97-3.07l.18-.07c1.03-.33 2.31-.56 4.03-.75c1.03.51 2.24.74 3 .74c.44 0 .74-.11.91-.3m-.41-.71l.09.11c-.01.1-.04.11-.09.13h-.04l-.19.02c-.46 0-1.17-.19-1.9-.51c.09-.1.13-.1.23-.1c1.4 0 1.8.25 1.9.35M7.83 17c-.65 1.19-1.24 1.85-1.69 2c.05-.38.5-1.04 1.21-1.69zm3.02-6.91c-.23-.9-.24-1.63-.07-2.05l.07-.12l.15.05c.17.24.19.56.09 1.1l-.03.16l-.16.82z"
-								/></svg
+
+							<button
+								on:click={() => addToCart(item)}
+								class="flex items-center justify-center w-full gap-2 py-2 font-bold text-white transition-colors rounded-lg cursor-pointer bg-slate-700 hover:bg-orange-600"
 							>
-							Ficha tecnica</a
-						>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2.5"
+									><line x1="12" y1="5" x2="12" y2="19" /><line
+										x1="5"
+										y1="12"
+										x2="19"
+										y2="12"
+									/></svg
+								>
+								Add to Cart
+							</button>
+
+							<!-- LINK PDF RESTAURADO -->
+							<a
+								href={`https://www.truper.com/ficha_tecnica/controllers/index.php?codigo=${item.code}&origen=nal`}
+								target="_blank"
+								class="flex items-center justify-center w-full gap-2 py-1 text-[11px] text-slate-400 hover:text-red-400 transition-colors border border-transparent hover:border-red-900/30 rounded"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="14"
+									height="14"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline
+										points="14 2 14 8 20 8"
+									/><line x1="16" y1="13" x2="8" y2="13" /><line
+										x1="16"
+										y1="17"
+										x2="8"
+										y2="17"
+									/><polyline points="10 9 9 9 8 9" /></svg
+								>
+								Ver Ficha Técnica (PDF)
+							</a>
+						</div>
 					</div>
-					<div></div>
-				</div>
-			{:else}
-				<div class="empty-state">
-					<p>
-						No se encontraron coincidencias para <strong
-							>"{searchTerm}"</strong
-						>
-					</p>
 				</div>
 			{/each}
 		</div>
-	</div>
+
+		{#if itemsToShow < filteredResults.length}
+			<div class="py-12 text-center text-slate-500 animate-pulse">Cargando más productos...</div>
+		{/if}
+	</main>
 </div>
 
 <style>
-	:global(body) {
-		margin: 0;
-		background-color: #0f172a;
-		font-family: 'Segoe UI', system-ui, sans-serif;
-	}
-
-	.app-wrapper {
-		min-height: 100vh;
-		padding: 2rem 1rem;
-	}
-
-	.search-container {
-		max-width: 1200px;
-		margin: 0 auto;
-	}
-
-	header {
-		position: sticky;
-		top: 0;
-		z-index: 10;
-		padding-bottom: 2rem;
-	}
-
-	.input-wrapper {
-		position: relative;
-		display: flex;
-		align-items: center;
-		max-width: 600px;
-		margin: 0 auto;
-	}
-
-	.search-icon {
-		position: absolute;
-		left: 1rem;
-		color: #64748b;
-	}
-
-	input {
-		width: 100%;
-		padding: 1rem 3rem;
-		background: #1e293b;
-		border: 2px solid #334155;
-		border-radius: 50px;
-		color: white;
-		font-size: 1.1rem;
-		transition: all 0.3s ease;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-	}
-
-	input:focus {
-		outline: none;
-		border-color: #f97316; /* Truper Orange */
-		box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.2);
-	}
-
-	.clear-btn {
-		position: absolute;
-		right: 1rem;
-		background: #334155;
-		border: none;
-		color: white;
-		width: 24px;
-		height: 24px;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-	}
-
-	.stats {
-		text-align: center;
-		margin-top: 1rem;
-		font-size: 0.9rem;
-		color: #94a3b8;
-	}
-
-	.grid {
-		display: grid;
-		gap: 1.5rem;
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-	}
-
-	.card {
-		background: #1e293b;
-		border-radius: 16px;
+	/* Estilos personalizados para line-clamp si Tailwind no lo tiene activo */
+	.line-clamp-2 {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
 		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		transition: transform 0.2s ease;
-		border: 1px solid #334155;
-	}
-
-	.card:hover {
-		transform: translateY(-5px);
-		border-color: #475569;
-	}
-
-	.image-box {
-		width: 100%;
-		height: 200px;
-		background: white;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 1rem;
-	}
-
-	.image-box img {
-		max-width: 100%;
-		max-height: 100%;
-		object-fit: contain;
-	}
-
-	.content {
-		padding: 1.25rem;
-		flex-grow: 1;
-	}
-
-	.card-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 0.75rem;
-	}
-
-	.code {
-		color: #f97316;
-		font-weight: 800;
-		font-family: monospace;
-		font-size: 1.1rem;
-	}
-
-	.family {
-		font-size: 0.7rem;
-		font-weight: bold;
-		text-transform: uppercase;
-		background: #0f172a;
-		color: #94a3b8;
-		padding: 4px 8px;
-		border-radius: 6px;
-	}
-
-	.description {
-		color: #f1f5f9;
-		font-size: 0.95rem;
-		margin: 0;
-		line-height: 1.5;
-		font-weight: 500;
-	}
-
-	.card-footer {
-		background: #161e2e;
-		padding: 1.25rem;
-		border-top: 1px solid #334155;
-	}
-
-	.stock-info {
-		display: flex;
-		justify-content: space-between;
-		margin-bottom: 1rem;
-	}
-
-	.label {
-		color: #64748b;
-		font-size: 0.75rem;
-		text-transform: uppercase;
-	}
-
-	.amount {
-		color: #e2e8f0;
-		font-weight: bold;
-		font-size: 0.85rem;
-	}
-
-	.prices {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 0.75rem;
-	}
-
-	.price-tag {
-		display: flex;
-		flex-direction: column;
-		padding: 0.5rem;
-		border-radius: 8px;
-		text-align: center;
-	}
-
-	.price-tag small {
-		font-size: 0.6rem;
-		margin-bottom: 2px;
-		opacity: 0.8;
-	}
-
-	.price-tag span {
-		font-weight: bold;
-		font-size: 1.1rem;
-	}
-
-	.usd {
-		background: #065f46;
-		color: #34d399;
-	}
-	.euro {
-		background: #1e3a8a;
-		color: #93c5fd;
-	}
-
-	.empty-state {
-		grid-column: 1 / -1;
-		text-align: center;
-		padding: 4rem 2rem;
-		background: #1e293b;
-		border-radius: 16px;
-		color: #64748b;
-		border: 2px dashed #334155;
 	}
 </style>
