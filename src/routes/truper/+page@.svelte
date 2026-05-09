@@ -3,12 +3,22 @@
 
 	let searchTerm = '';
 	let debouncedSearch = '';
+	let selectedFamily = 'Todas';
+	let isFiltersVisible = true; // Control de visibilidad
 	let cart = [];
 	let isCartOpen = false;
 	let itemsToShow = 50;
 	let timer;
 
-	// Debounce de 1 segundo
+	$: families = [
+		'Todas',
+		...new Set(
+			inventory
+				.map((item) => item.family)
+				.filter((f) => f && f.trim() !== ''),
+		),
+	].sort();
+
 	$: {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
@@ -28,17 +38,25 @@
 	}
 
 	$: filteredResults = inventory.filter((item) => {
+		const matchesFamily =
+			selectedFamily === 'Todas' || item.family === selectedFamily;
+		if (!matchesFamily) return false;
+
 		const query = debouncedSearch.trim();
 		if (query.length < 3) return true;
+
 		const keywords = normalizeText(query).split(/\s+/);
-		const itemContent = normalizeText(`${item?.code} ${item?.family} ${item?.description}`);
+		const itemContent = normalizeText(
+			`${item?.code} ${item?.family} ${item?.description}`,
+		);
 		return keywords.every((word) => itemContent.includes(word));
 	});
 
 	$: displayItems = filteredResults.slice(0, itemsToShow);
 
 	function handleScroll() {
-		const { scrollHeight, scrollTop, clientHeight } = document.documentElement;
+		const { scrollHeight, scrollTop, clientHeight } =
+			document.documentElement;
 		if (scrollTop + clientHeight >= scrollHeight - 200) {
 			if (itemsToShow < filteredResults.length) itemsToShow += 40;
 		}
@@ -85,7 +103,11 @@
 			stroke-width="2"
 			stroke-linecap="round"
 			stroke-linejoin="round"
-			><circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path
+			><circle cx="8" cy="21" r="1" /><circle
+				cx="19"
+				cy="21"
+				r="1"
+			/><path
 				d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
 			/></svg
 		>
@@ -112,7 +134,9 @@
 			: 'translate-x-full'} border-l border-slate-700"
 	>
 		<div class="flex flex-col h-full">
-			<div class="p-6 border-b border-slate-700 flex justify-between items-center bg-[#161e2e]">
+			<div
+				class="p-6 border-b border-slate-700 flex justify-between items-center bg-[#161e2e]"
+			>
 				<h2 class="flex items-center gap-2 text-xl font-bold">
 					<span class="text-orange-500">🛒</span> Tu Carrito
 				</h2>
@@ -138,13 +162,23 @@
 								class="object-contain w-16 h-16 p-1 bg-white rounded-lg"
 							/>
 							<div class="flex-1 min-w-0">
-								<h4 class="text-sm font-bold text-orange-400 truncate">{item.code}</h4>
-								<p class="text-xs text-slate-400 line-clamp-2">{item.description}</p>
-								<div class="flex items-center justify-between mt-1">
-									<span class="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-300"
+								<h4
+									class="text-sm font-bold text-orange-400 truncate"
+								>
+									{item.code}
+								</h4>
+								<p class="text-xs text-slate-400 line-clamp-2">
+									{item.description}
+								</p>
+								<div
+									class="flex items-center justify-between mt-1"
+								>
+									<span
+										class="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-300"
 										>Cant: {item.quantity}</span
 									>
-									<span class="text-sm font-bold text-green-400"
+									<span
+										class="text-sm font-bold text-green-400"
 										>{formatCurrency(item.usd, '$')}</span
 									>
 								</div>
@@ -176,40 +210,83 @@
 					<span>Total USD:</span>
 					<span class="text-green-400"
 						>{formatCurrency(
-							cart.reduce((sum, i) => sum + i.usd * i.quantity, 0),
-							'$'
+							cart.reduce(
+								(sum, i) => sum + i.usd * i.quantity,
+								0,
+							),
+							'$',
 						)}</span
 					>
 				</div>
 				<button
 					class="w-full py-3 font-bold transition-colors bg-orange-600 hover:bg-orange-500 rounded-xl"
+					>Finalizar Pedido</button
 				>
-					Finalizar Pedido
-				</button>
 			</div>
 		</div>
 	</aside>
 
 	<!-- CONTENIDO PRINCIPAL -->
 	<main class="px-4 py-8 mx-auto max-w-7xl">
-		<header class="sticky z-40 mb-12 top-0 py-4 border-b-4 border-slate-700 bg-[#0f172a]">
-			<div class="relative max-w-2xl mx-auto shadow-2xl">
-				<input
-					type="text"
-					placeholder="Buscar código, nombre..."
-					class="w-full bg-[#1e293b] border-2 border-slate-700 focus:border-orange-500 rounded-lg py-4 px-8 text-lg outline-none transition-all shadow-inner"
-					bind:value={searchTerm}
-				/>
-				{#if searchTerm !== debouncedSearch}
-					<div class="absolute -translate-y-1/2 right-6 top-1/2">
-						<div
-							class="w-5 h-5 border-2 border-orange-500 rounded-full animate-spin border-t-transparent"
-						></div>
-					</div>
-				{/if}
+		<header
+			class="sticky z-40 mb-8 top-0 py-2 border-b border-slate-700 bg-[#0f172a]/95 backdrop-blur"
+		>
+			<div
+				class="flex flex-col items-center max-w-4xl gap-4 mx-auto md:flex-row"
+			>
+				<div class="relative flex-1 w-full">
+					<input
+						type="text"
+						placeholder="Buscar productos..."
+						class="w-full bg-[#1e293b] border border-slate-700 focus:border-orange-500 rounded-lg py-2 px-6 outline-none transition-all text-sm"
+						bind:value={searchTerm}
+					/>
+					{#if searchTerm !== debouncedSearch}
+						<div class="absolute -translate-y-1/2 right-4 top-1/2">
+							<div
+								class="w-4 h-4 border-2 border-orange-500 rounded-full animate-spin border-t-transparent"
+							></div>
+						</div>
+					{/if}
+				</div>
+
+				<button
+					on:click={() => (isFiltersVisible = !isFiltersVisible)}
+					class="flex items-center gap-2 px-4 py-2 text-xs font-bold transition-colors border rounded-lg bg-slate-800 hover:bg-slate-700 border-slate-700"
+				>
+					{isFiltersVisible ? 'Ocultar Familias' : 'Mostrar Familias'}
+					<!-- {#if selectedFamily !== 'Todas'}
+						<span class="w-2 h-2 bg-orange-500 rounded-full"></span>
+					{/if} -->
+				</button>
 			</div>
-			<div class="mt-3 text-sm text-center text-slate-500">
-				Mostrando {displayItems.length} de {filteredResults.length} productos
+
+			<!-- FILTRO DE FAMILIAS COLAPSABLE -->
+			{#if isFiltersVisible}
+				<div
+					class="flex justify-start gap-2 pb-2 mt-4 overflow-x-auto no-scrollbar md:justify-center flex-nowrap md:flex-wrap"
+				>
+					{#each families as family}
+						<button
+							on:click={() => {
+								selectedFamily = family;
+								itemsToShow = 50;
+							}}
+							class="px-3 py-1 rounded-full text-[11px] font-bold transition-all whitespace-nowrap border {selectedFamily ===
+							family
+								? 'bg-orange-600 border-orange-500 text-white'
+								: 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}"
+						>
+							{family}
+						</button>
+					{/each}
+				</div>
+			{/if}
+
+			<div
+				class="mt-2 text-[10px] text-center text-slate-500 uppercase tracking-widest font-bold"
+			>
+				{filteredResults.length} resultados encontrados
 			</div>
 		</header>
 
@@ -219,7 +296,9 @@
 				<div
 					class="group bg-[#1e293b] border border-slate-700 rounded-2xl overflow-hidden flex flex-col hover:border-orange-500/50 transition-all hover:shadow-[0_0_20px_rgba(249,115,22,0.1)]"
 				>
-					<div class="relative flex items-center justify-center h-48 p-6 bg-white">
+					<div
+						class="relative flex items-center justify-center h-48 p-6 bg-white"
+					>
 						<img
 							src="https://www.truper.com/admin/images/ch/{item.code}.jpg"
 							alt={item.description}
@@ -235,30 +314,46 @@
 
 					<div class="flex flex-col flex-1 p-5">
 						<div class="flex items-start justify-between mb-2">
-							<span class="font-mono text-lg font-bold text-orange-500">{item.code}</span>
-							<span class="text-[10px] text-slate-500 uppercase">{item.UM}</span>
+							<span
+								class="font-mono text-lg font-bold text-orange-500"
+								>{item.code}</span
+							>
+							<span class="text-[10px] text-slate-500 uppercase"
+								>{item.UM}</span
+							>
 						</div>
-
-						<h3 class="h-10 mb-4 text-sm italic font-medium leading-snug line-clamp-2">
+						<h3
+							class="h-10 mb-4 text-sm italic font-medium leading-snug line-clamp-2"
+						>
 							{item.description}
 						</h3>
-
 						<div class="mt-auto space-y-3">
 							<div class="flex gap-2">
 								<div
 									class="flex-1 p-2 text-center border rounded-lg bg-green-900/30 border-green-700/50"
 								>
-									<div class="text-[10px] text-green-500 uppercase font-bold">USD</div>
-									<div class="font-bold text-green-400">{formatCurrency(item.usd, '$')}</div>
+									<div
+										class="text-[10px] text-green-500 uppercase font-bold"
+									>
+										USD
+									</div>
+									<div class="font-bold text-green-400">
+										{formatCurrency(item.usd, '$')}
+									</div>
 								</div>
 								<div
 									class="flex-1 p-2 text-center border rounded-lg bg-blue-900/30 border-blue-700/50"
 								>
-									<div class="text-[10px] text-blue-500 uppercase font-bold">EUR</div>
-									<div class="font-bold text-blue-300">{formatCurrency(item.euro, '€')}</div>
+									<div
+										class="text-[10px] text-blue-500 uppercase font-bold"
+									>
+										EUR
+									</div>
+									<div class="font-bold text-blue-300">
+										{formatCurrency(item.euro, '€')}
+									</div>
 								</div>
 							</div>
-
 							<button
 								on:click={() => addToCart(item)}
 								class="flex items-center justify-center w-full gap-2 py-2 font-bold text-white transition-colors rounded-lg cursor-pointer bg-slate-700 hover:bg-orange-600"
@@ -271,7 +366,12 @@
 									fill="none"
 									stroke="currentColor"
 									stroke-width="2.5"
-									><line x1="12" y1="5" x2="12" y2="19" /><line
+									><line
+										x1="12"
+										y1="5"
+										x2="12"
+										y2="19"
+									/><line
 										x1="5"
 										y1="12"
 										x2="19"
@@ -280,8 +380,6 @@
 								>
 								Add to Cart
 							</button>
-
-							<!-- LINK PDF RESTAURADO -->
 							<a
 								href={`https://www.truper.com/ficha_tecnica/controllers/index.php?codigo=${item.code}&origen=nal`}
 								target="_blank"
@@ -295,9 +393,14 @@
 									fill="none"
 									stroke="currentColor"
 									stroke-width="2"
-									><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline
-										points="14 2 14 8 20 8"
-									/><line x1="16" y1="13" x2="8" y2="13" /><line
+									><path
+										d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+									/><polyline points="14 2 14 8 20 8" /><line
+										x1="16"
+										y1="13"
+										x2="8"
+										y2="13"
+									/><line
 										x1="16"
 										y1="17"
 										x2="8"
@@ -313,17 +416,25 @@
 		</div>
 
 		{#if itemsToShow < filteredResults.length}
-			<div class="py-12 text-center text-slate-500 animate-pulse">Cargando más productos...</div>
+			<div class="py-12 text-center text-slate-500 animate-pulse">
+				Cargando más productos...
+			</div>
 		{/if}
 	</main>
 </div>
 
 <style>
-	/* Estilos personalizados para line-clamp si Tailwind no lo tiene activo */
 	.line-clamp-2 {
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
+	}
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+	.no-scrollbar {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
 	}
 </style>
