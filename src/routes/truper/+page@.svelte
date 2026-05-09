@@ -1,14 +1,37 @@
 <script>
+	import { onMount } from 'svelte';
 	import inventory from './inventory_april_3.json';
 
 	let searchTerm = '';
 	let debouncedSearch = '';
 	let selectedFamily = 'Todas';
-	let isFiltersVisible = true; // Control de visibilidad
-	let cart = [];
+	let isFiltersVisible = true;
+	let cart = []; // Se inicializa vacío y se carga en onMount
 	let isCartOpen = false;
+	let isInfoOpen = false; // Control para el nuevo drawer de info
 	let itemsToShow = 50;
 	let timer;
+
+	let isLoaded = false;
+
+	// --- PERSISTENCIA DEL CARRITO ---
+	onMount(() => {
+		const savedCart = localStorage.getItem('cart_storage');
+		if (savedCart) {
+			try {
+				cart = JSON.parse(savedCart);
+			} catch (e) {
+				console.error('Error cargando carrito', e);
+				cart = [];
+			}
+		}
+		isLoaded = true; // Marcamos que ya cargamos lo que había
+	});
+
+	// Guardar automáticamente cuando el carrito cambie
+	$: if (isLoaded) {
+		localStorage.setItem('cart_storage', JSON.stringify(cart));
+	}
 
 	$: families = [
 		'Todas',
@@ -88,9 +111,33 @@
 </svelte:head>
 
 <div class="min-h-screen bg-[#0f172a] text-slate-200 font-sans">
+	<!-- BOTÓN INFO TIENDA (NUEVO) -->
+	<button
+		class="fixed z-50 flex items-center justify-center p-4 text-white transition-all transform bg-blue-600 rounded-full shadow-2xl bottom-3 left-6 hover:bg-blue-500 hover:scale-110 lg:bottom-auto lg:top-6"
+		on:click={() => (isInfoOpen = !isInfoOpen)}
+	>
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="24"
+			height="24"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			><circle cx="12" cy="12" r="10" /><line
+				x1="12"
+				y1="16"
+				x2="12"
+				y2="12"
+			/><line x1="12" y1="8" x2="12.01" y2="8" /></svg
+		>
+	</button>
+
 	<!-- BOTÓN CARRITO FLOTANTE -->
 	<button
-		class="fixed z-50 flex items-center justify-center p-4 text-white transition-all transform bg-orange-600 rounded-full shadow-2xl bottom-3 lg:bottom-auto lg:top-6 right-6 hover:bg-orange-500 hover:scale-110"
+		class="fixed z-50 flex items-center justify-center p-4 text-white transition-all transform bg-orange-600 rounded-full shadow-2xl bottom-3 right-6 hover:bg-orange-500 hover:scale-110 lg:bottom-auto lg:top-6"
 		on:click={() => (isCartOpen = !isCartOpen)}
 	>
 		<svg
@@ -120,14 +167,81 @@
 		{/if}
 	</button>
 
-	<!-- DRAWER DEL CARRITO -->
-	{#if isCartOpen}
+	<!-- OVERLAYS -->
+	{#if isCartOpen || isInfoOpen}
 		<div
 			class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
-			on:click={() => (isCartOpen = false)}
+			on:click={() => {
+				isCartOpen = false;
+				isInfoOpen = false;
+			}}
 		></div>
 	{/if}
 
+	<!-- DRAWER INFO TIENDA -->
+	<aside
+		class="fixed top-0 left-0 h-full w-full max-w-md bg-[#1e293b] z-[70] shadow-2xl transition-transform duration-300 ease-in-out transform {isInfoOpen
+			? 'translate-x-0'
+			: '-translate-x-full'} border-r border-slate-700"
+	>
+		<div class="flex flex-col h-full">
+			<div
+				class="p-6 border-b border-slate-700 flex justify-between items-center bg-[#161e2e]"
+			>
+				<h2 class="flex items-center gap-2 text-xl font-bold">
+					<span class="text-blue-500"></span> Información
+				</h2>
+				<button
+					class="text-2xl text-slate-400 hover:text-white"
+					on:click={() => (isInfoOpen = false)}>&times;</button
+				>
+			</div>
+			<div class="flex-1 p-6 space-y-6 overflow-y-auto">
+				<div>
+					<h3
+						class="mb-1 text-xs font-bold tracking-widest text-blue-400 uppercase"
+					>
+						Nombre de la Tienda
+					</h3>
+					<p class="text-lg font-bold">[Nombre Placeholder]</p>
+				</div>
+				<div>
+					<h3
+						class="mb-1 text-xs font-bold tracking-widest text-blue-400 uppercase"
+					>
+						Dirección Física
+					</h3>
+					<p class="text-sm text-slate-300">
+						[Dirección Completa Placeholder]
+					</p>
+				</div>
+				<div>
+					<h3
+						class="mb-1 text-xs font-bold tracking-widest text-blue-400 uppercase"
+					>
+						Teléfono
+					</h3>
+					<p class="font-mono text-sm text-slate-300">
+						[+00 000 000 000]
+					</p>
+				</div>
+				<div class="pt-4 border-t border-slate-700">
+					<h3
+						class="mb-3 text-xs font-bold tracking-widest text-blue-400 uppercase"
+					>
+						Ubicación en Mapa
+					</h3>
+					<div
+						class="flex items-center justify-center w-full h-64 italic border bg-slate-800 rounded-xl border-slate-700 text-slate-500"
+					>
+						[Mapa de Google Placeholder]
+					</div>
+				</div>
+			</div>
+		</div>
+	</aside>
+
+	<!-- DRAWER DEL CARRITO -->
 	<aside
 		class="fixed top-0 right-0 h-full w-full max-w-md bg-[#1e293b] z-[70] shadow-2xl transition-transform duration-300 ease-in-out transform {isCartOpen
 			? 'translate-x-0'
@@ -255,13 +369,9 @@
 					class="flex items-center gap-2 px-4 py-2 text-xs font-bold transition-colors border rounded-lg bg-slate-800 hover:bg-slate-700 border-slate-700"
 				>
 					{isFiltersVisible ? 'Ocultar Familias' : 'Mostrar Familias'}
-					<!-- {#if selectedFamily !== 'Todas'}
-						<span class="w-2 h-2 bg-orange-500 rounded-full"></span>
-					{/if} -->
 				</button>
 			</div>
 
-			<!-- FILTRO DE FAMILIAS COLAPSABLE -->
 			{#if isFiltersVisible}
 				<div
 					class="flex justify-start gap-2 pb-2 mt-4 overflow-x-auto no-scrollbar md:justify-center flex-nowrap md:flex-wrap"
@@ -290,7 +400,6 @@
 			</div>
 		</header>
 
-		<!-- GRID DE 4 COLUMNAS -->
 		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
 			{#each displayItems as item (item.code)}
 				<div
