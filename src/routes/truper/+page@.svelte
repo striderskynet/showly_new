@@ -4,17 +4,17 @@
 
 	let searchTerm = '';
 	let debouncedSearch = '';
-	let selectedFamily = 'Todas';
+	// Cambiado a array para soportar múltiples
+	let selectedFamilies = ['Todas'];
 	let isFiltersVisible = true;
-	let cart = []; // Se inicializa vacío y se carga en onMount
+	let cart = [];
 	let isCartOpen = false;
-	let isInfoOpen = false; // Control para el nuevo drawer de info
+	let isInfoOpen = false;
 	let itemsToShow = 50;
 	let timer;
 
 	let isLoaded = false;
 
-	// --- PERSISTENCIA DEL CARRITO ---
 	onMount(() => {
 		const savedCart = localStorage.getItem('cart_storage');
 		if (savedCart) {
@@ -25,16 +25,14 @@
 				cart = [];
 			}
 		}
-		isLoaded = true; // Marcamos que ya cargamos lo que había
+		isLoaded = true;
 	});
 
-	// Guardar automáticamente cuando el carrito cambie
 	$: if (isLoaded) {
 		localStorage.setItem('cart_storage', JSON.stringify(cart));
 	}
 
 	$: families = [
-		'Todas',
 		...new Set(
 			inventory
 				.map((item) => item.family)
@@ -60,9 +58,31 @@
 		);
 	}
 
+	// Lógica para alternar familias
+	function toggleFamily(family) {
+		if (family === 'Todas') {
+			selectedFamilies = ['Todas'];
+		} else {
+			// Quitar 'Todas' si se selecciona una específica
+			let newSelection = selectedFamilies.filter((f) => f !== 'Todas');
+
+			if (newSelection.includes(family)) {
+				newSelection = newSelection.filter((f) => f !== family);
+			} else {
+				newSelection = [...newSelection, family];
+			}
+
+			// Si no queda nada, volver a 'Todas'
+			selectedFamilies =
+				newSelection.length === 0 ? ['Todas'] : newSelection;
+		}
+		itemsToShow = 50;
+	}
+
 	$: filteredResults = inventory.filter((item) => {
 		const matchesFamily =
-			selectedFamily === 'Todas' || item.family === selectedFamily;
+			selectedFamilies.includes('Todas') ||
+			selectedFamilies.includes(item.family);
 		if (!matchesFamily) return false;
 
 		const query = debouncedSearch.trim();
@@ -111,7 +131,7 @@
 </svelte:head>
 
 <div class="min-h-screen bg-[#0f172a] text-slate-200 font-sans">
-	<!-- BOTÓN INFO TIENDA (NUEVO) -->
+	<!-- BOTONES FLOTANTES (INFO Y CARRITO) -->
 	<button
 		class="fixed z-50 flex items-center justify-center p-4 text-white transition-all transform bg-blue-600 rounded-full shadow-2xl bottom-3 left-6 hover:bg-blue-500 hover:scale-110 lg:bottom-auto lg:top-6"
 		on:click={() => (isInfoOpen = !isInfoOpen)}
@@ -135,7 +155,6 @@
 		>
 	</button>
 
-	<!-- BOTÓN CARRITO FLOTANTE -->
 	<button
 		class="fixed z-50 flex items-center justify-center p-4 text-white transition-all transform bg-orange-600 rounded-full shadow-2xl bottom-3 right-6 hover:bg-orange-500 hover:scale-110 lg:bottom-auto lg:top-6"
 		on:click={() => (isCartOpen = !isCartOpen)}
@@ -167,7 +186,6 @@
 		{/if}
 	</button>
 
-	<!-- OVERLAYS -->
 	{#if isCartOpen || isInfoOpen}
 		<div
 			class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
@@ -189,7 +207,7 @@
 				class="p-6 border-b border-slate-700 flex justify-between items-center bg-[#161e2e]"
 			>
 				<h2 class="flex items-center gap-2 text-xl font-bold">
-					<span class="text-blue-500"></span> Información
+					Información
 				</h2>
 				<button
 					class="text-2xl text-slate-400 hover:text-white"
@@ -211,9 +229,7 @@
 					>
 						Dirección Física
 					</h3>
-					<p class="text-sm text-slate-300">
-						[Dirección Completa Placeholder]
-					</p>
+					<p class="text-sm text-slate-300">[Dirección Completa]</p>
 				</div>
 				<div>
 					<h3
@@ -224,18 +240,6 @@
 					<p class="font-mono text-sm text-slate-300">
 						[+00 000 000 000]
 					</p>
-				</div>
-				<div class="pt-4 border-t border-slate-700">
-					<h3
-						class="mb-3 text-xs font-bold tracking-widest text-blue-400 uppercase"
-					>
-						Ubicación en Mapa
-					</h3>
-					<div
-						class="flex items-center justify-center w-full h-64 italic border bg-slate-800 rounded-xl border-slate-700 text-slate-500"
-					>
-						[Mapa de Google Placeholder]
-					</div>
 				</div>
 			</div>
 		</div>
@@ -252,14 +256,13 @@
 				class="p-6 border-b border-slate-700 flex justify-between items-center bg-[#161e2e]"
 			>
 				<h2 class="flex items-center gap-2 text-xl font-bold">
-					<span class="text-orange-500">🛒</span> Tu Carrito
+					🛒 Tu Carrito
 				</h2>
 				<button
 					class="text-2xl text-slate-400 hover:text-white"
 					on:click={() => (isCartOpen = false)}>&times;</button
 				>
 			</div>
-
 			<div class="flex-1 p-4 space-y-4 overflow-y-auto">
 				{#if cart.length === 0}
 					<div class="py-20 text-center opacity-40">
@@ -318,7 +321,6 @@
 					{/each}
 				{/if}
 			</div>
-
 			<div class="p-6 border-t border-slate-700 bg-[#161e2e]">
 				<div class="flex justify-between mb-4 text-lg font-bold">
 					<span>Total USD:</span>
@@ -364,26 +366,37 @@
 					{/if}
 				</div>
 
+				<!-- Botón de filtros más pequeño -->
 				<button
 					on:click={() => (isFiltersVisible = !isFiltersVisible)}
-					class="flex items-center gap-2 px-4 py-2 text-xs font-bold transition-colors border rounded-lg bg-slate-800 hover:bg-slate-700 border-slate-700"
+					class="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold transition-colors border rounded-md bg-slate-800 hover:bg-slate-700 border-slate-700 uppercase"
 				>
-					{isFiltersVisible ? 'Ocultar Familias' : 'Mostrar Familias'}
+					{isFiltersVisible ? 'Cerrar Familias' : 'Filtros'}
 				</button>
 			</div>
 
 			{#if isFiltersVisible}
 				<div
-					class="flex justify-start gap-2 pb-2 mt-4 overflow-x-auto no-scrollbar md:justify-center flex-nowrap md:flex-wrap"
+					class="flex justify-start gap-1.5 pb-2 mt-4 overflow-x-auto no-scrollbar md:justify-center flex-nowrap md:flex-wrap"
 				>
+					<!-- Botón "Todas" para resetear rápido -->
+					<button
+						on:click={() => toggleFamily('Todas')}
+						class="px-2.5 py-1 rounded-md text-[10px] font-bold transition-all border {selectedFamilies.includes(
+							'Todas',
+						)
+							? 'bg-orange-600 border-orange-500 text-white'
+							: 'bg-slate-800 border-slate-700 text-slate-400'}"
+					>
+						TODAS
+					</button>
+
 					{#each families as family}
 						<button
-							on:click={() => {
-								selectedFamily = family;
-								itemsToShow = 50;
-							}}
-							class="px-3 py-1 rounded-full text-[11px] font-bold transition-all whitespace-nowrap border {selectedFamily ===
-							family
+							on:click={() => toggleFamily(family)}
+							class="px-2.5 py-1 rounded-md text-[10px] font-bold transition-all whitespace-nowrap border {selectedFamilies.includes(
+								family,
+							)
 								? 'bg-orange-600 border-orange-500 text-white'
 								: 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}"
 						>
@@ -420,7 +433,6 @@
 							{item.family}
 						</div>
 					</div>
-
 					<div class="flex flex-col flex-1 p-5">
 						<div class="flex items-start justify-between mb-2">
 							<span
@@ -489,35 +501,6 @@
 								>
 								Add to Cart
 							</button>
-							<a
-								href={`https://www.truper.com/ficha_tecnica/controllers/index.php?codigo=${item.code}&origen=nal`}
-								target="_blank"
-								class="flex items-center justify-center w-full gap-2 py-1 text-[11px] text-slate-400 hover:text-red-400 transition-colors border border-transparent hover:border-red-900/30 rounded"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									width="14"
-									height="14"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									><path
-										d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-									/><polyline points="14 2 14 8 20 8" /><line
-										x1="16"
-										y1="13"
-										x2="8"
-										y2="13"
-									/><line
-										x1="16"
-										y1="17"
-										x2="8"
-										y2="17"
-									/><polyline points="10 9 9 9 8 9" /></svg
-								>
-								Ver Ficha Técnica (PDF)
-							</a>
 						</div>
 					</div>
 				</div>
