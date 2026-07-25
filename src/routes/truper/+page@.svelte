@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
-	import inventory from './inventory_april_3.json';
+	// import inventory from './inventory_april_3.json';
+	import inventory from './inventory_july_25.json';
 
 	let searchTerm = '';
 	let debouncedSearch = '';
@@ -443,7 +444,7 @@
 						</div>
 
 						<h3
-							class="h-16 mb-4 text-sm italic font-medium leading-tight line-clamp-2"
+							class="h-16 mb-4 text-sm italic font-medium leading-tight"
 						>
 							{item.description}
 						</h3>
