@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	// import inventory from './inventory_april_3.json';
-	import inventory from './inventory_july_25.json';
+	import inventory from './inventario_july_25.json';
 
 	let searchTerm = '';
 	let debouncedSearch = '';
