@@ -1,18 +1,16 @@
 <script>
 	import { onMount } from 'svelte';
-	// import inventory from './inventory_april_3.json';
 	import inventory from './inventario_july_25.json';
 
 	let searchTerm = '';
 	let debouncedSearch = '';
 	let selectedFamilies = ['Todas'];
-	let isFiltersVisible = true;
+	let isFiltersVisible = false;
 	let cart = [];
 	let isCartOpen = false;
 	let isInfoOpen = false;
 	let itemsToShow = 50;
-	let timer;
-
+	let timer = null;
 	let isLoaded = false;
 
 	onMount(() => {
@@ -20,8 +18,8 @@
 		if (savedCart) {
 			try {
 				cart = JSON.parse(savedCart);
-			} catch (e) {
-				console.error('Error cargando carrito', e);
+			} catch (error) {
+				console.error('Error loading cart', error);
 				cart = [];
 			}
 		}
@@ -36,19 +34,25 @@
 		...new Set(
 			inventory
 				.map((item) => item.family)
-				.filter((f) => f && f.trim() !== ''),
+				.filter((family) => family && family.trim() !== ''),
 		),
 	].sort();
 
 	$: {
+		const term = searchTerm;
 		clearTimeout(timer);
 		timer = setTimeout(() => {
-			debouncedSearch = searchTerm;
+			debouncedSearch = term;
 			itemsToShow = 50;
 		}, 1000);
 	}
 
-	function normalizeText(text) {
+	/**
+	 * Normalizes input string by converting to lowercase and removing accent marks.
+	 * @param {string} text - The input string to normalize.
+	 * @returns {string} The normalized string.
+	 */
+	const normalizeText = (text) => {
 		return (
 			text
 				?.toString()
@@ -56,15 +60,21 @@
 				.normalize('NFD')
 				.replace(/[\u0300-\u036f]/g, '') || ''
 		);
-	}
+	};
 
-	function toggleFamily(family) {
+	/**
+	 * Toggles selection state for product family filters.
+	 * @param {string} family - The category/family name to toggle.
+	 */
+	const toggleFamily = (family) => {
 		if (family === 'Todas') {
 			selectedFamilies = ['Todas'];
 		} else {
-			let newSelection = selectedFamilies.filter((f) => f !== 'Todas');
+			let newSelection = selectedFamilies.filter(
+				(item) => item !== 'Todas',
+			);
 			if (newSelection.includes(family)) {
-				newSelection = newSelection.filter((f) => f !== family);
+				newSelection = newSelection.filter((item) => item !== family);
 			} else {
 				newSelection = [...newSelection, family];
 			}
@@ -72,7 +82,7 @@
 				newSelection.length === 0 ? ['Todas'] : newSelection;
 		}
 		itemsToShow = 50;
-	}
+	};
 
 	$: filteredResults = inventory.filter((item) => {
 		const matchesFamily =
@@ -92,31 +102,57 @@
 
 	$: displayItems = filteredResults.slice(0, itemsToShow);
 
-	function handleScroll() {
+	$: cartTotal = cart.reduce(
+		(sum, item) => sum + item.usd * item.quantity,
+		0,
+	);
+
+	$: totalCartItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+	/**
+	 * Handles infinite scrolling to load more products dynamically.
+	 */
+	const handleScroll = () => {
 		const { scrollHeight, scrollTop, clientHeight } =
 			document.documentElement;
 		if (scrollTop + clientHeight >= scrollHeight - 200) {
-			if (itemsToShow < filteredResults.length) itemsToShow += 40;
+			if (itemsToShow < filteredResults.length) {
+				itemsToShow += 40;
+			}
 		}
-	}
+	};
 
-	function addToCart(item) {
-		const index = cart.findIndex((i) => i.code === item.code);
+	/**
+	 * Adds an item to the cart or increments its quantity if it already exists.
+	 * @param {Object} item - The product item to add.
+	 */
+	const addToCart = (item) => {
+		const index = cart.findIndex((cartItem) => cartItem.code === item.code);
 		if (index !== -1) {
 			cart[index].quantity += 1;
 			cart = [...cart];
 		} else {
 			cart = [...cart, { ...item, quantity: 1 }];
 		}
-	}
+	};
 
-	function removeFromCart(code) {
-		cart = cart.filter((i) => i.code !== code);
-	}
+	/**
+	 * Removes an item from the cart by its product code.
+	 * @param {string} code - The product code to remove.
+	 */
+	const removeFromCart = (code) => {
+		cart = cart.filter((item) => item.code !== code);
+	};
 
-	function formatCurrency(value, symbol) {
+	/**
+	 * Formats a numeric value into currency format with a specific symbol.
+	 * @param {number} value - The numeric value to format.
+	 * @param {string} symbol - The currency symbol to prepend.
+	 * @returns {string} The formatted currency string.
+	 */
+	const formatCurrency = (value, symbol) => {
 		return `${symbol}${value?.toFixed(2)}`;
-	}
+	};
 </script>
 
 <svelte:window on:scroll={handleScroll} />
@@ -125,10 +161,10 @@
 	<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </svelte:head>
 
-<div class="min-h-screen bg-[#0f172a] text-slate-200 font-sans">
-	<!-- BOTONES FLOTANTES -->
+<div class="min-h-screen bg-[#0f172a] font-sans text-slate-200">
+	<!-- FLOATING BUTTONS -->
 	<button
-		class="fixed z-50 flex items-center justify-center p-4 text-white transition-all transform bg-blue-600 rounded-full shadow-2xl bottom-3 left-6 hover:bg-blue-500 hover:scale-110 lg:bottom-auto lg:top-6"
+		class="fixed bottom-3 left-6 z-50 flex items-center justify-center transform rounded-full bg-blue-600 p-4 text-white shadow-2xl transition-all hover:scale-110 hover:bg-blue-500 lg:bottom-auto lg:top-6"
 		on:click={() => (isInfoOpen = !isInfoOpen)}
 	>
 		<svg
@@ -151,7 +187,7 @@
 	</button>
 
 	<button
-		class="fixed z-50 flex items-center justify-center p-4 text-white transition-all transform bg-orange-600 rounded-full shadow-2xl bottom-3 right-6 hover:bg-orange-500 hover:scale-110 lg:bottom-auto lg:top-6"
+		class="fixed bottom-3 right-6 z-50 flex items-center justify-center transform rounded-full bg-orange-600 p-4 text-white shadow-2xl transition-all hover:scale-110 hover:bg-orange-500 lg:bottom-auto lg:top-6"
 		on:click={() => (isCartOpen = !isCartOpen)}
 	>
 		<svg
@@ -174,16 +210,18 @@
 		>
 		{#if cart.length > 0}
 			<span
-				class="absolute px-2 py-1 text-xs font-bold text-orange-600 bg-white border-2 border-orange-600 rounded-full -top-1 -right-1"
+				class="absolute -right-1 -top-1 rounded-full border-2 border-orange-600 bg-white px-2 py-1 text-xs font-bold text-orange-600"
 			>
-				{cart.reduce((acc, i) => acc + i.quantity, 0)}
+				{totalCartItems}
 			</span>
 		{/if}
 	</button>
 
 	{#if isCartOpen || isInfoOpen}
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<div
-			class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+			class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
 			on:click={() => {
 				isCartOpen = false;
 				isInfoOpen = false;
@@ -191,15 +229,15 @@
 		></div>
 	{/if}
 
-	<!-- DRAWER INFO -->
+	<!-- INFO DRAWER -->
 	<aside
-		class="fixed top-0 left-0 h-full w-full max-w-md bg-[#1e293b] z-[70] shadow-2xl transition-transform duration-300 ease-in-out transform {isInfoOpen
+		class="fixed left-0 top-0 z-[70] h-full w-full max-w-md transform border-r border-slate-700 bg-[#1e293b] shadow-2xl transition-transform duration-300 ease-in-out {isInfoOpen
 			? 'translate-x-0'
-			: '-translate-x-full'} border-r border-slate-700"
+			: '-translate-x-full'}"
 	>
-		<div class="flex flex-col h-full">
+		<div class="flex h-full flex-col">
 			<div
-				class="p-6 border-b border-slate-700 flex justify-between items-center bg-[#161e2e]"
+				class="flex items-center justify-between border-b border-slate-700 bg-[#161e2e] p-6"
 			>
 				<h2 class="flex items-center gap-2 text-xl font-bold">
 					Información
@@ -209,10 +247,10 @@
 					on:click={() => (isInfoOpen = false)}>&times;</button
 				>
 			</div>
-			<div class="flex-1 p-6 space-y-6 overflow-y-auto">
+			<div class="flex-1 space-y-6 overflow-y-auto p-6">
 				<div>
 					<h3
-						class="mb-1 text-xs font-bold tracking-widest text-blue-400 uppercase"
+						class="mb-1 text-xs font-bold uppercase tracking-widest text-blue-400"
 					>
 						Tienda
 					</h3>
@@ -220,7 +258,7 @@
 				</div>
 				<div>
 					<h3
-						class="mb-1 text-xs font-bold tracking-widest text-blue-400 uppercase"
+						class="mb-1 text-xs font-bold uppercase tracking-widest text-blue-400"
 					>
 						Ubicación
 					</h3>
@@ -230,53 +268,53 @@
 		</div>
 	</aside>
 
-	<!-- DRAWER CARRITO -->
+	<!-- CART DRAWER -->
 	<aside
-		class="fixed top-0 right-0 h-full w-full max-w-md bg-[#1e293b] z-[70] shadow-2xl transition-transform duration-300 ease-in-out transform {isCartOpen
+		class="fixed right-0 top-0 z-[70] h-full w-full max-w-md transform border-l border-slate-700 bg-[#1e293b] shadow-2xl transition-transform duration-300 ease-in-out {isCartOpen
 			? 'translate-x-0'
-			: 'translate-x-full'} border-l border-slate-700"
+			: 'translate-x-full'}"
 	>
-		<div class="flex flex-col h-full">
+		<div class="flex h-full flex-col">
 			<div
-				class="p-6 border-b border-slate-700 flex justify-between items-center bg-[#161e2e]"
+				class="flex items-center justify-between border-b border-slate-700 bg-[#161e2e] p-6"
 			>
 				<h2 class="flex items-center gap-2 text-xl font-bold">
-					🛒 Carrito
+					Carrito
 				</h2>
 				<button
 					class="text-2xl text-slate-400 hover:text-white"
 					on:click={() => (isCartOpen = false)}>&times;</button
 				>
 			</div>
-			<div class="flex-1 p-4 space-y-4 overflow-y-auto">
+			<div class="flex-1 space-y-4 overflow-y-auto p-4">
 				{#if cart.length === 0}
 					<div class="py-20 text-center opacity-40"><p>Vacío</p></div>
 				{:else}
-					{#each cart as item}
+					{#each cart as item, index (`${item.code}-${index}`)}
 						<div
-							class="flex gap-4 bg-[#0f172a] p-3 rounded-xl border border-slate-700 items-center"
+							class="flex items-center gap-4 rounded-xl border border-slate-700 bg-[#0f172a] p-3"
 						>
 							<img
 								src="https://www.truper.com/admin/images/ch/{item.code}.jpg"
 								alt=""
-								class="object-contain p-1 bg-white rounded-lg w-14 h-14"
+								class="h-14 w-14 rounded-lg bg-white p-1 object-contain"
 							/>
-							<div class="flex-1 min-w-0">
+							<div class="min-w-0 flex-1">
 								<h4
-									class="text-xs font-bold text-orange-400 truncate"
+									class="truncate text-xs font-bold text-orange-400"
 								>
 									{item.code}
 								</h4>
 								<p
-									class="text-[11px] text-slate-400 line-clamp-2 leading-tight"
+									class="line-clamp-2 text-[11px] leading-tight text-slate-400"
 								>
 									{item.description}
 								</p>
 								<div
-									class="flex items-center justify-between mt-1"
+									class="mt-1 flex items-center justify-between"
 								>
 									<span
-										class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300"
+										class="rounded bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300"
 										>Cant: {item.quantity}</span
 									>
 									<span
@@ -306,45 +344,39 @@
 					{/each}
 				{/if}
 			</div>
-			<div class="p-6 border-t border-slate-700 bg-[#161e2e]">
-				<div class="flex justify-between mb-4 text-lg font-bold">
+			<div class="border-t border-slate-700 bg-[#161e2e] p-6">
+				<div class="mb-4 flex justify-between text-lg font-bold">
 					<span>Total:</span>
 					<span class="text-green-400"
-						>{formatCurrency(
-							cart.reduce(
-								(sum, i) => sum + i.usd * i.quantity,
-								0,
-							),
-							'$',
-						)}</span
+						>{formatCurrency(cartTotal, '$')}</span
 					>
 				</div>
 				<button
-					class="w-full py-3 text-sm font-bold tracking-widest uppercase transition-colors bg-orange-600 hover:bg-orange-500 rounded-xl"
+					class="w-full rounded-xl bg-orange-600 py-3 text-sm font-bold uppercase tracking-widest transition-colors hover:bg-orange-500"
 					>Finalizar</button
 				>
 			</div>
 		</div>
 	</aside>
 
-	<main class="px-4 py-8 mx-auto max-w-7xl">
+	<main class="mx-auto max-w-7xl px-4 py-8">
 		<header
-			class="sticky z-40 mb-8 top-0 py-2 border-b border-slate-700 bg-[#0f172a]/95 backdrop-blur"
+			class="sticky top-0 z-40 mb-8 border-b border-slate-700 bg-[#0f172a]/95 py-2 backdrop-blur"
 		>
 			<div
-				class="flex flex-col items-center max-w-4xl gap-4 mx-auto md:flex-row"
+				class="mx-auto flex max-w-4xl flex-col items-center gap-4 md:flex-row"
 			>
-				<div class="relative flex-1 w-full">
+				<div class="relative w-full flex-1">
 					<input
 						type="text"
 						placeholder="Buscar productos..."
-						class="w-full bg-[#1e293b] border border-slate-700 focus:border-orange-500 rounded-lg py-2 px-6 outline-none transition-all text-sm"
+						class="w-full rounded-lg border border-slate-700 bg-[#1e293b] px-6 py-2 text-sm outline-none transition-all focus:border-orange-500"
 						bind:value={searchTerm}
 					/>
 					{#if searchTerm !== debouncedSearch}
-						<div class="absolute -translate-y-1/2 right-4 top-1/2">
+						<div class="absolute right-4 top-1/2 -translate-y-1/2">
 							<div
-								class="w-4 h-4 border-2 border-orange-500 rounded-full animate-spin border-t-transparent"
+								class="h-4 w-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent"
 							></div>
 						</div>
 					{/if}
@@ -352,7 +384,7 @@
 
 				<button
 					on:click={() => (isFiltersVisible = !isFiltersVisible)}
-					class="px-3 py-1.5 text-[10px] font-bold border rounded-md bg-slate-800 hover:bg-slate-700 border-slate-700 uppercase"
+					class="rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-bold uppercase hover:bg-slate-700"
 				>
 					{isFiltersVisible ? 'Cerrar Familias' : 'Filtros'}
 				</button>
@@ -360,26 +392,26 @@
 
 			{#if isFiltersVisible}
 				<div
-					class="flex justify-start gap-1.5 pb-2 mt-4 overflow-x-auto no-scrollbar md:justify-center flex-nowrap md:flex-wrap"
+					class="no-scrollbar mt-4 flex flex-nowrap justify-start gap-1.5 overflow-x-auto pb-2 md:flex-wrap md:justify-center"
 				>
 					<button
 						on:click={() => toggleFamily('Todas')}
-						class="px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all {selectedFamilies.includes(
+						class="rounded-md border px-2.5 py-1 text-[10px] font-bold transition-all {selectedFamilies.includes(
 							'Todas',
 						)
-							? 'bg-orange-600 border-orange-500 text-white'
-							: 'bg-slate-800 border-slate-700 text-slate-400'}"
+							? 'border-orange-500 bg-orange-600 text-white'
+							: 'border-slate-700 bg-slate-800 text-slate-400'}"
 					>
 						TODAS
 					</button>
 					{#each families as family}
 						<button
 							on:click={() => toggleFamily(family)}
-							class="px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all whitespace-nowrap {selectedFamilies.includes(
+							class="whitespace-nowrap rounded-md border px-2.5 py-1 text-[10px] font-bold transition-all {selectedFamilies.includes(
 								family,
 							)
-								? 'bg-orange-600 border-orange-500 text-white'
-								: 'bg-slate-800 border-slate-700 text-slate-400'}"
+								? 'border-orange-500 bg-orange-600 text-white'
+								: 'border-slate-700 bg-slate-800 text-slate-400'}"
 						>
 							{family}
 						</button>
@@ -388,39 +420,39 @@
 			{/if}
 
 			<div
-				class="mt-2 text-[10px] text-center text-slate-500 uppercase font-bold tracking-widest"
+				class="mt-2 text-center text-[10px] font-bold uppercase tracking-widest text-slate-500"
 			>
 				{filteredResults.length} resultados
 			</div>
 		</header>
 
 		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-			{#each displayItems as item (item.code)}
+			{#each displayItems as item, index (`${item?.code}-${index}`)}
 				<div
-					class="group bg-[#1e293b] border border-slate-700 rounded-2xl overflow-hidden flex flex-col hover:border-orange-500/50 transition-all"
+					class="group flex flex-col overflow-hidden rounded-2xl border border-slate-700 bg-[#1e293b] transition-all hover:border-orange-500/50"
 				>
 					<div
-						class="relative flex items-center justify-center h-48 p-6 bg-white"
+						class="relative flex h-48 items-center justify-center bg-white p-6"
 					>
 						<img
 							src="https://www.truper.com/admin/images/ch/{item.code}.jpg"
 							alt={item.description}
-							class="object-contain max-w-full max-h-full transition-transform group-hover:scale-105"
+							class="max-h-full max-w-full object-contain transition-transform group-hover:scale-105"
 						/>
 						<div
-							class="absolute top-2 left-2 bg-[#0f172a] px-2 py-1 rounded text-[10px] font-bold text-slate-400 uppercase"
+							class="absolute left-2 top-2 rounded bg-[#0f172a] px-2 py-1 text-[10px] font-bold uppercase text-slate-400"
 						>
 							{item.family}
 						</div>
 					</div>
 
-					<div class="flex flex-col flex-1 p-5">
+					<div class="flex flex-1 flex-col p-5">
 						<div
-							class="flex items-start justify-between mb-2 -mt-2"
+							class="-mt-2 mb-2 flex items-start justify-between"
 						>
-							<div class="flex items-center gap-1 -mt-1">
+							<div class="-mt-1 flex items-center gap-1">
 								<span
-									class="text-[9px] text-slate-500 uppercase font-bold"
+									class="text-[9px] font-bold uppercase text-slate-500"
 									>Code:</span
 								>
 								<span
@@ -430,7 +462,7 @@
 							</div>
 							<div class="flex items-center gap-1">
 								<span
-									class="text-[9px] text-slate-500 uppercase font-bold"
+									class="text-[9px] font-bold uppercase text-slate-500"
 									>Stock / Unidad:</span
 								>
 								<span
@@ -444,7 +476,7 @@
 						</div>
 
 						<h3
-							class="h-16 mb-4 text-sm italic font-medium leading-tight"
+							class="mb-4 h-16 text-sm font-medium leading-tight italic"
 						>
 							{item.description}
 						</h3>
@@ -452,10 +484,10 @@
 						<div class="mt-auto space-y-3">
 							<div class="flex gap-2">
 								<div
-									class="flex-1 p-2 text-center border rounded-lg bg-green-900/20 border-green-700/30"
+									class="flex-1 rounded-lg border border-green-700/30 bg-green-900/20 p-2 text-center"
 								>
 									<div
-										class="text-[9px] text-green-500 uppercase font-bold"
+										class="text-[9px] font-bold uppercase text-green-500"
 									>
 										USD
 									</div>
@@ -464,10 +496,10 @@
 									</div>
 								</div>
 								<div
-									class="flex-1 p-2 text-center border rounded-lg bg-blue-900/20 border-blue-700/30"
+									class="flex-1 rounded-lg border border-blue-700/30 bg-blue-900/20 p-2 text-center"
 								>
 									<div
-										class="text-[9px] text-blue-500 uppercase font-bold"
+										class="text-[9px] font-bold uppercase text-blue-500"
 									>
 										EUR
 									</div>
@@ -479,7 +511,7 @@
 
 							<button
 								on:click={() => addToCart(item)}
-								class="flex items-center justify-center w-full gap-2 py-2.5 font-bold text-white transition-all rounded-lg bg-slate-700 hover:bg-orange-600 disabled:opacity-30 disabled:hover:bg-slate-700"
+								class="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-700 py-2.5 font-bold text-white transition-all hover:bg-orange-600 disabled:opacity-30 disabled:hover:bg-slate-700"
 								disabled={item.amount <= 0}
 							>
 								<svg
@@ -508,7 +540,7 @@
 							<a
 								href={`https://www.truper.com/ficha_tecnica/controllers/index.php?codigo=${item.code}&origen=nal`}
 								target="_blank"
-								class="flex items-center justify-center w-full gap-2 py-1 text-[11px] text-slate-400 hover:text-red-400 transition-colors rounded"
+								class="flex w-full items-center justify-center gap-2 rounded py-1 text-[11px] text-slate-400 transition-colors hover:text-red-400"
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -542,7 +574,7 @@
 
 		{#if itemsToShow < filteredResults.length}
 			<div
-				class="py-12 text-xs font-bold tracking-widest text-center uppercase text-slate-500 animate-pulse"
+				class="animate-pulse py-12 text-center text-xs font-bold uppercase tracking-widest text-slate-500"
 			>
 				Cargando...
 			</div>
