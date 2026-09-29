@@ -13,20 +13,10 @@
 	const ALL_FAMILIES = 'Todas';
 
 	// ─── Family normalization ───────────────────────────────────────────────
-	/**
-	 * Detects whether a string looks like a product description fragment
-	 * (contains measurements, model numbers, units) rather than a genuine
-	 * family-name extension.
-	 */
 	const looksLikeDescription = (text) =>
 		/\d/.test(text) ||
 		/\b(mm|cm|kg|hp|w|kw|v|a|pulg|pulgadas|lb|oz|ml|l)\b/i.test(text);
 
-	/**
-	 * Builds a raw-family → canonical-family map. Some rows in the source
-	 * data have the description concatenated onto the family name; this
-	 * collapses them back to the shortest plausible ancestor family.
-	 */
 	const buildFamilyAlias = (products) => {
 		const families = [
 			...new Set(
@@ -46,8 +36,6 @@
 				const boundary = family[candidate.length];
 				const suffix = family.slice(candidate.length);
 
-				// Reject "Herramientas" → "Herramientas electricas" style
-				// extensions; accept "Cintas adhesivas y selladores" + junk.
 				if (boundary === ' ' && !looksLikeDescription(suffix)) continue;
 
 				alias.set(family, candidate);
@@ -57,7 +45,7 @@
 		return alias;
 	};
 
-	// ─── Static derivations (run once at component init) ────────────────────
+	// ─── Static derivations ─────────────────────────────────────────────────
 	const familyAlias = buildFamilyAlias(catalog);
 
 	const products = catalog.map((product) => ({
@@ -68,6 +56,8 @@
 	const familyOptions = [
 		...new Set(products.map(({ _family }) => _family)),
 	].sort((a, b) => a.localeCompare(b, 'es'));
+
+	const productByCode = new Map(products.map((p) => [p.code, p]));
 
 	// ─── State ──────────────────────────────────────────────────────────────
 	let rawQuery = '';
@@ -80,6 +70,7 @@
 	let basket = [];
 	let hydrated = false;
 	let debounceHandle = null;
+	let shareFeedback = '';
 
 	// ─── Pure helpers ───────────────────────────────────────────────────────
 	const normalize = (value) =>
@@ -134,6 +125,109 @@
 		}
 	};
 
+	// ─── URL sync ───────────────────────────────────────────────────────────
+	/** `?b=CODE:QTY,CODE:QTY` — compacto y legible al compartir. */
+	const serializeBasket = (lines) =>
+		lines.map((line) => `${line.code}:${line.quantity}`).join(',');
+
+	const parseBasketParam = (value) => {
+		if (!value) return [];
+		const pairs = [];
+		for (const part of value.split(',')) {
+			const [code, qtyRaw] = part.split(':');
+			const quantity = Number.parseInt(qtyRaw, 10);
+			if (code && Number.isFinite(quantity) && quantity > 0) {
+				pairs.push({ code, quantity });
+			}
+		}
+		return pairs;
+	};
+
+	/** Reconstruye las líneas a partir de {code, quantity} usando el catálogo
+	 *  actual (precios/stock frescos) y descarta lo que ya no exista. */
+	const rehydrateLines = (lines) =>
+		lines.flatMap((line) => {
+			if (!line || typeof line.code !== 'string') return [];
+			const quantity = Number(line.quantity);
+			if (!Number.isFinite(quantity) || quantity <= 0) return [];
+			const product = productByCode.get(line.code);
+			if (!product || product.amount <= 0) return [];
+			return [
+				{
+					...product,
+					quantity: Math.min(quantity, product.amount),
+				},
+			];
+		});
+
+	const buildUrl = (query, families, lines) => {
+		const params = new URLSearchParams();
+		const q = query.trim();
+		if (q) params.set('q', q);
+		if (!families.includes(ALL_FAMILIES)) {
+			[...families].sort().forEach((f) => params.append('fam', f));
+		}
+		if (lines.length) params.set('b', serializeBasket(lines));
+		const search = params.toString();
+		return `${location.pathname}${search ? `?${search}` : ''}${location.hash}`;
+	};
+
+	/** Escribe el estado en la URL. `push` añade entrada al historial. */
+	const syncUrl = (push = false) => {
+		if (typeof window === 'undefined') return;
+		const url = buildUrl(activeQuery, activeFamilies, basket);
+		const current = `${location.pathname}${location.search}${location.hash}`;
+		if (url === current) return;
+
+		const state = {
+			q: activeQuery,
+			fam: activeFamilies,
+			b: serializeBasket(basket),
+		};
+		if (push) history.pushState(state, '', url);
+		else history.replaceState(state, '', url);
+	};
+
+	/** Lee el estado desde la URL. `lines = null` significa "no hay info". */
+	const readUrl = () => {
+		const params = new URLSearchParams(location.search);
+		const q = params.get('q') ?? '';
+		const fam = params.getAll('fam').filter((f) => familyOptions.includes(f));
+		const lines = params.has('b')
+			? rehydrateLines(parseBasketParam(params.get('b')))
+			: null;
+		return { q, fam: fam.length ? fam : [ALL_FAMILIES], lines };
+	};
+
+	const onPopState = () => {
+		const { q, fam, lines } = readUrl();
+		clearTimeout(debounceHandle);
+		rawQuery = q;
+		activeQuery = q;
+		activeFamilies = fam;
+		if (lines !== null) {
+			basket = lines;
+			persistBasket();
+		}
+		visibleCount = PAGE_SIZE;
+	};
+
+	// ─── Share ──────────────────────────────────────────────────────────────
+	const shareBasket = async () => {
+		const url = `${location.origin}${buildUrl(
+			activeQuery,
+			activeFamilies,
+			basket
+		)}`;
+		try {
+			await navigator.clipboard.writeText(url);
+			shareFeedback = '¡Enlace copiado!';
+		} catch (error) {
+			shareFeedback = 'No se pudo copiar';
+		}
+		setTimeout(() => (shareFeedback = ''), 2000);
+	};
+
 	// ─── Basket mutations ───────────────────────────────────────────────────
 	const addToBasket = (product) => {
 		if (!product || product.amount <= 0) return;
@@ -150,6 +244,7 @@
 			basket = [...basket, { ...product, quantity: 1 }];
 		}
 		persistBasket();
+		syncUrl();
 	};
 
 	const incrementLine = (line) => {
@@ -160,6 +255,7 @@
 				: entry
 		);
 		persistBasket();
+		syncUrl();
 	};
 
 	const decrementLine = (code) => {
@@ -169,16 +265,19 @@
 			return next > 0 ? [{ ...line, quantity: next }] : [];
 		});
 		persistBasket();
+		syncUrl();
 	};
 
 	const removeFromBasket = (code) => {
 		basket = basket.filter((line) => line.code !== code);
 		persistBasket();
+		syncUrl();
 	};
 
 	const clearBasket = () => {
 		basket = [];
 		persistBasket();
+		syncUrl();
 	};
 
 	// ─── Filters & search ───────────────────────────────────────────────────
@@ -193,6 +292,7 @@
 			activeFamilies = next.length ? next : [ALL_FAMILIES];
 		}
 		visibleCount = PAGE_SIZE;
+		syncUrl(true);
 	};
 
 	const resetAll = () => {
@@ -200,6 +300,7 @@
 		activeQuery = '';
 		activeFamilies = [ALL_FAMILIES];
 		visibleCount = PAGE_SIZE;
+		syncUrl(true);
 	};
 
 	const onQueryInput = (event) => {
@@ -208,6 +309,7 @@
 		debounceHandle = setTimeout(() => {
 			activeQuery = rawQuery;
 			visibleCount = PAGE_SIZE;
+			syncUrl();
 		}, DEBOUNCE_MS);
 	};
 
@@ -235,30 +337,47 @@
 
 	// ─── Lifecycle ──────────────────────────────────────────────────────────
 	onMount(() => {
-		try {
-			const stored = localStorage.getItem(STORAGE_KEY);
-			if (stored) {
-				const parsed = JSON.parse(stored);
-				if (Array.isArray(parsed)) {
-					basket = parsed.filter(
-						(line) =>
-							line &&
-							typeof line.code === 'string' &&
-							Number.isFinite(line.quantity) &&
-							line.quantity > 0
-					);
+		const { q, fam, lines } = readUrl();
+
+		if (lines !== null) {
+			// La URL trae carrito (link compartido) → tiene prioridad
+			basket = lines;
+		} else {
+			// Sin carrito en URL → restauramos de localStorage
+			try {
+				const stored = localStorage.getItem(STORAGE_KEY);
+				if (stored) {
+					const parsed = JSON.parse(stored);
+					if (Array.isArray(parsed)) basket = rehydrateLines(parsed);
 				}
+			} catch (error) {
+				console.warn('No se pudo restaurar el carrito', error);
 			}
-		} catch (error) {
-			console.warn('No se pudo restaurar el carrito', error);
 		}
+
+		rawQuery = q;
+		activeQuery = q;
+		activeFamilies = fam;
+
+		// Normaliza la URL desde el primer render (refleja el carrito local)
+		persistBasket();
+		history.replaceState(
+			{ q, fam, b: serializeBasket(basket) },
+			'',
+			buildUrl(q, fam, basket)
+		);
+
 		hydrated = true;
 	});
 
 	onDestroy(() => clearTimeout(debounceHandle));
 </script>
 
-<svelte:window on:scroll={onWindowScroll} on:keydown={onWindowKeydown} />
+<svelte:window
+	on:scroll={onWindowScroll}
+	on:keydown={onWindowKeydown}
+	on:popstate={onPopState}
+/>
 
 <svelte:head>
 	<title>Catálogo de productos</title>
@@ -272,21 +391,21 @@
 	>
 		<div class="mx-auto max-w-7xl px-4 py-3">
 			<div class="flex items-center gap-3">
-				<div class="hidden shrink-0 sm:block">
+				<div class="hidden shrink-0 sm:block text-center">
 					<p
 						class="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500"
 					>
 						Catálogo
 					</p>
-					<p class="text-sm font-bold leading-tight text-slate-100">
-						[Nombre]
+					<p class="text-sm font-bold leading-tight text-orange-500">
+						TRUPER
 					</p>
 				</div>
 
 				<!-- Search -->
-				<div class="relative flex-1">
+				<div class="relative flex-1  h-10">
 					<svg
-						class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+						class="pointer-events-none absolute left-2 top-7 h-4 w-4 -translate-y-1/2 text-slate-500"
 						xmlns="http://www.w3.org/2000/svg"
 						fill="none"
 						viewBox="0 0 24 24"
@@ -304,11 +423,11 @@
 						value={rawQuery}
 						on:input={onQueryInput}
 						placeholder="Buscar por código, familia o descripción…"
-						class="w-full rounded-xl border border-slate-800 bg-slate-900/60 py-2.5 pl-10 pr-10 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-orange-500/60 focus:bg-slate-900"
+						class="w-full rounded-xl border border-slate-800 bg-slate-900/60 py-2.5 pl-8 pr-10 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-orange-500/60 focus:bg-slate-900"
 					/>
 
 					{#if isSearching}
-						<div class="absolute right-3 top-1/2 -translate-y-1/2">
+						<div class="absolute right-3 top-7 -translate-y-1/2">
 							<div
 								class="h-4 w-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent"
 							></div>
@@ -318,7 +437,7 @@
 							type="button"
 							aria-label="Limpiar búsqueda"
 							on:click={resetAll}
-							class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
+							class="absolute right-2 top-8 -translate-y-1/2 rounded-md p-1 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -716,6 +835,13 @@
 			</div>
 			<div class="flex items-center gap-1">
 				{#if basket.length > 0}
+					<button
+						type="button"
+						on:click={shareBasket}
+						class="rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-800 hover:text-orange-400"
+					>
+						{shareFeedback || 'Compartir'}
+					</button>
 					<button
 						type="button"
 						on:click={clearBasket}
