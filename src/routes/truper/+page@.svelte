@@ -1,585 +1,875 @@
 <script>
-	import { onMount } from 'svelte';
-	import inventory from './inventario_july_25.json';
+	import { onDestroy, onMount } from 'svelte';
+	import catalog from './inventario_july_25.json';
 
-	let searchTerm = '';
-	let debouncedSearch = '';
-	let selectedFamilies = ['Todas'];
-	let isFiltersVisible = false;
-	let cart = [];
-	let isCartOpen = false;
-	let isInfoOpen = false;
-	let itemsToShow = 50;
-	let timer = null;
-	let isLoaded = false;
+	// ─── Constants ──────────────────────────────────────────────────────────
+	const PAGE_SIZE = 48;
+	const DEBOUNCE_MS = 800;
+	const MIN_QUERY_LENGTH = 3;
+	const STORAGE_KEY = 'basket.v2';
+	const IMAGE_BASE = 'https://www.truper.com/admin/images/ch';
+	const DATASHEET_URL =
+		'https://www.truper.com/ficha_tecnica/controllers/index.php';
+	const ALL_FAMILIES = 'Todas';
 
-	onMount(() => {
-		const savedCart = localStorage.getItem('cart_storage');
-		if (savedCart) {
-			try {
-				cart = JSON.parse(savedCart);
-			} catch (error) {
-				console.error('Error loading cart', error);
-				cart = [];
-			}
-		}
-		isLoaded = true;
-	});
-
-	$: if (isLoaded) {
-		localStorage.setItem('cart_storage', JSON.stringify(cart));
-	}
-
-	$: families = [
-		...new Set(
-			inventory
-				.map((item) => item.family)
-				.filter((family) => family && family.trim() !== ''),
-		),
-	].sort();
-
-	$: {
-		const term = searchTerm;
-		clearTimeout(timer);
-		timer = setTimeout(() => {
-			debouncedSearch = term;
-			itemsToShow = 50;
-		}, 1000);
-	}
+	// ─── Family normalization ───────────────────────────────────────────────
+	/**
+	 * Detects whether a string looks like a product description fragment
+	 * (contains measurements, model numbers, units) rather than a genuine
+	 * family-name extension.
+	 */
+	const looksLikeDescription = (text) =>
+		/\d/.test(text) ||
+		/\b(mm|cm|kg|hp|w|kw|v|a|pulg|pulgadas|lb|oz|ml|l)\b/i.test(text);
 
 	/**
-	 * Normalizes input string by converting to lowercase and removing accent marks.
-	 * @param {string} text - The input string to normalize.
-	 * @returns {string} The normalized string.
+	 * Builds a raw-family → canonical-family map. Some rows in the source
+	 * data have the description concatenated onto the family name; this
+	 * collapses them back to the shortest plausible ancestor family.
 	 */
-	const normalizeText = (text) => {
-		return (
-			text
-				?.toString()
-				.toLowerCase()
-				.normalize('NFD')
-				.replace(/[\u0300-\u036f]/g, '') || ''
-		);
-	};
+	const buildFamilyAlias = (products) => {
+		const families = [
+			...new Set(
+				products.map(({ family }) => family).filter((f) => f && f.trim())
+			),
+		];
+		const alias = new Map(families.map((f) => [f, f]));
+		const byLengthDesc = [...families].sort((a, b) => b.length - a.length);
 
-	/**
-	 * Toggles selection state for product family filters.
-	 * @param {string} family - The category/family name to toggle.
-	 */
-	const toggleFamily = (family) => {
-		if (family === 'Todas') {
-			selectedFamilies = ['Todas'];
-		} else {
-			let newSelection = selectedFamilies.filter(
-				(item) => item !== 'Todas',
-			);
-			if (newSelection.includes(family)) {
-				newSelection = newSelection.filter((item) => item !== family);
-			} else {
-				newSelection = [...newSelection, family];
+		for (const family of families) {
+			for (const candidate of byLengthDesc) {
+				if (candidate === family) continue;
+				if (candidate.length >= family.length) continue;
+				if (family.length - candidate.length < 10) continue;
+				if (!family.startsWith(candidate)) continue;
+
+				const boundary = family[candidate.length];
+				const suffix = family.slice(candidate.length);
+
+				// Reject "Herramientas" → "Herramientas electricas" style
+				// extensions; accept "Cintas adhesivas y selladores" + junk.
+				if (boundary === ' ' && !looksLikeDescription(suffix)) continue;
+
+				alias.set(family, candidate);
+				break;
 			}
-			selectedFamilies =
-				newSelection.length === 0 ? ['Todas'] : newSelection;
 		}
-		itemsToShow = 50;
+		return alias;
 	};
 
-	$: filteredResults = inventory.filter((item) => {
-		const matchesFamily =
-			selectedFamilies.includes('Todas') ||
-			selectedFamilies.includes(item.family);
-		if (!matchesFamily) return false;
+	// ─── Static derivations (run once at component init) ────────────────────
+	const familyAlias = buildFamilyAlias(catalog);
 
-		const query = debouncedSearch.trim();
-		if (query.length < 3) return true;
+	const products = catalog.map((product) => ({
+		...product,
+		_family: familyAlias.get(product.family) ?? product.family,
+	}));
 
-		const keywords = normalizeText(query).split(/\s+/);
-		const itemContent = normalizeText(
-			`${item?.code} ${item?.family} ${item?.description}`,
+	const familyOptions = [
+		...new Set(products.map(({ _family }) => _family)),
+	].sort((a, b) => a.localeCompare(b, 'es'));
+
+	// ─── State ──────────────────────────────────────────────────────────────
+	let rawQuery = '';
+	let activeQuery = '';
+	let activeFamilies = [ALL_FAMILIES];
+	let showFilters = false;
+	let showInfo = false;
+	let showBasket = false;
+	let visibleCount = PAGE_SIZE;
+	let basket = [];
+	let hydrated = false;
+	let debounceHandle = null;
+
+	// ─── Pure helpers ───────────────────────────────────────────────────────
+	const normalize = (value) =>
+		String(value ?? '')
+			.toLowerCase()
+			.normalize('NFD')
+			.replace(/[\u0300-\u036f]/g, '');
+
+	const formatMoney = (value, symbol = '$') => {
+		const amount = Number(value);
+		return `${symbol}${Number.isFinite(amount) ? amount.toFixed(2) : '0.00'}`;
+	};
+
+	const productImage = (code) => `${IMAGE_BASE}/${code}.jpg`;
+	const datasheetUrl = (code) => `${DATASHEET_URL}?codigo=${code}&origen=nal`;
+	const lineTotal = (line) => line.usd * line.quantity;
+
+	// ─── Derived ────────────────────────────────────────────────────────────
+	$: matchedProducts = products.filter((product) => {
+		const familyMatches =
+			activeFamilies.includes(ALL_FAMILIES) ||
+			activeFamilies.includes(product._family);
+		if (!familyMatches) return false;
+
+		const query = activeQuery.trim();
+		if (query.length < MIN_QUERY_LENGTH) return true;
+
+		const tokens = normalize(query).split(/\s+/);
+		const haystack = normalize(
+			`${product.code} ${product._family} ${product.description}`
 		);
-		return keywords.every((word) => itemContent.includes(word));
+		return tokens.every((token) => haystack.includes(token));
 	});
 
-	$: displayItems = filteredResults.slice(0, itemsToShow);
+	$: visibleProducts = matchedProducts.slice(0, visibleCount);
+	$: hasMore = visibleCount < matchedProducts.length;
+	$: isSearching = rawQuery !== activeQuery;
+	$: isFiltered = !activeFamilies.includes(ALL_FAMILIES);
 
-	$: cartTotal = cart.reduce(
-		(sum, item) => sum + item.usd * item.quantity,
-		0,
+	$: basketSubtotal = basket.reduce(
+		(sum, line) => sum + line.usd * line.quantity,
+		0
 	);
+	$: basketCount = basket.reduce((sum, line) => sum + line.quantity, 0);
 
-	$: totalCartItems = cart.reduce((acc, item) => acc + item.quantity, 0);
-
-	/**
-	 * Handles infinite scrolling to load more products dynamically.
-	 */
-	const handleScroll = () => {
-		const { scrollHeight, scrollTop, clientHeight } =
-			document.documentElement;
-		if (scrollTop + clientHeight >= scrollHeight - 200) {
-			if (itemsToShow < filteredResults.length) {
-				itemsToShow += 40;
-			}
+	// ─── Persistence ────────────────────────────────────────────────────────
+	const persistBasket = () => {
+		try {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(basket));
+		} catch (error) {
+			console.warn('No se pudo guardar el carrito', error);
 		}
 	};
 
-	/**
-	 * Adds an item to the cart or increments its quantity if it already exists.
-	 * @param {Object} item - The product item to add.
-	 */
-	const addToCart = (item) => {
-		const index = cart.findIndex((cartItem) => cartItem.code === item.code);
-		if (index !== -1) {
-			cart[index].quantity += 1;
-			cart = [...cart];
+	// ─── Basket mutations ───────────────────────────────────────────────────
+	const addToBasket = (product) => {
+		if (!product || product.amount <= 0) return;
+
+		const existing = basket.find((line) => line.code === product.code);
+		if (existing) {
+			if (existing.quantity >= product.amount) return;
+			basket = basket.map((line) =>
+				line.code === product.code
+					? { ...line, quantity: line.quantity + 1 }
+					: line
+			);
 		} else {
-			cart = [...cart, { ...item, quantity: 1 }];
+			basket = [...basket, { ...product, quantity: 1 }];
+		}
+		persistBasket();
+	};
+
+	const incrementLine = (line) => {
+		if (line.quantity >= line.amount) return;
+		basket = basket.map((entry) =>
+			entry.code === line.code
+				? { ...entry, quantity: entry.quantity + 1 }
+				: entry
+		);
+		persistBasket();
+	};
+
+	const decrementLine = (code) => {
+		basket = basket.flatMap((line) => {
+			if (line.code !== code) return [line];
+			const next = line.quantity - 1;
+			return next > 0 ? [{ ...line, quantity: next }] : [];
+		});
+		persistBasket();
+	};
+
+	const removeFromBasket = (code) => {
+		basket = basket.filter((line) => line.code !== code);
+		persistBasket();
+	};
+
+	const clearBasket = () => {
+		basket = [];
+		persistBasket();
+	};
+
+	// ─── Filters & search ───────────────────────────────────────────────────
+	const toggleFamily = (family) => {
+		if (family === ALL_FAMILIES) {
+			activeFamilies = [ALL_FAMILIES];
+		} else {
+			const withoutAll = activeFamilies.filter((f) => f !== ALL_FAMILIES);
+			const next = withoutAll.includes(family)
+				? withoutAll.filter((f) => f !== family)
+				: [...withoutAll, family];
+			activeFamilies = next.length ? next : [ALL_FAMILIES];
+		}
+		visibleCount = PAGE_SIZE;
+	};
+
+	const resetAll = () => {
+		rawQuery = '';
+		activeQuery = '';
+		activeFamilies = [ALL_FAMILIES];
+		visibleCount = PAGE_SIZE;
+	};
+
+	const onQueryInput = (event) => {
+		rawQuery = event.currentTarget.value;
+		clearTimeout(debounceHandle);
+		debounceHandle = setTimeout(() => {
+			activeQuery = rawQuery;
+			visibleCount = PAGE_SIZE;
+		}, DEBOUNCE_MS);
+	};
+
+	// ─── Window handlers ────────────────────────────────────────────────────
+	const onWindowScroll = () => {
+		if (!hasMore) return;
+		const { scrollHeight, scrollTop, clientHeight } = document.documentElement;
+		if (scrollTop + clientHeight >= scrollHeight - 240) {
+			visibleCount = Math.min(
+				visibleCount + PAGE_SIZE,
+				matchedProducts.length
+			);
 		}
 	};
 
-	/**
-	 * Removes an item from the cart by its product code.
-	 * @param {string} code - The product code to remove.
-	 */
-	const removeFromCart = (code) => {
-		cart = cart.filter((item) => item.code !== code);
+	const closeAll = () => {
+		showBasket = false;
+		showInfo = false;
+		showFilters = false;
 	};
 
-	/**
-	 * Formats a numeric value into currency format with a specific symbol.
-	 * @param {number} value - The numeric value to format.
-	 * @param {string} symbol - The currency symbol to prepend.
-	 * @returns {string} The formatted currency string.
-	 */
-	const formatCurrency = (value, symbol) => {
-		return `${symbol}${value?.toFixed(2)}`;
+	const onWindowKeydown = (event) => {
+		if (event.key === 'Escape') closeAll();
 	};
+
+	// ─── Lifecycle ──────────────────────────────────────────────────────────
+	onMount(() => {
+		try {
+			const stored = localStorage.getItem(STORAGE_KEY);
+			if (stored) {
+				const parsed = JSON.parse(stored);
+				if (Array.isArray(parsed)) {
+					basket = parsed.filter(
+						(line) =>
+							line &&
+							typeof line.code === 'string' &&
+							Number.isFinite(line.quantity) &&
+							line.quantity > 0
+					);
+				}
+			}
+		} catch (error) {
+			console.warn('No se pudo restaurar el carrito', error);
+		}
+		hydrated = true;
+	});
+
+	onDestroy(() => clearTimeout(debounceHandle));
 </script>
 
-<svelte:window on:scroll={handleScroll} />
+<svelte:window on:scroll={onWindowScroll} on:keydown={onWindowKeydown} />
 
 <svelte:head>
+	<title>Catálogo de productos</title>
 	<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </svelte:head>
 
-<div class="min-h-screen bg-[#0f172a] font-sans text-slate-200">
-	<!-- FLOATING BUTTONS -->
-	<button
-		class="fixed bottom-3 left-6 z-50 flex items-center justify-center transform rounded-full bg-blue-600 p-4 text-white shadow-2xl transition-all hover:scale-110 hover:bg-blue-500 lg:bottom-auto lg:top-6"
-		on:click={() => (isInfoOpen = !isInfoOpen)}
+<div class="min-h-screen bg-slate-950 text-slate-200 antialiased">
+	<!-- ── Header ───────────────────────────────────────────────────────── -->
+	<header
+		class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md"
 	>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="24"
-			height="24"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			><circle cx="12" cy="12" r="10" /><line
-				x1="12"
-				y1="16"
-				x2="12"
-				y2="12"
-			/><line x1="12" y1="8" x2="12.01" y2="8" /></svg
-		>
-	</button>
-
-	<button
-		class="fixed bottom-3 right-6 z-50 flex items-center justify-center transform rounded-full bg-orange-600 p-4 text-white shadow-2xl transition-all hover:scale-110 hover:bg-orange-500 lg:bottom-auto lg:top-6"
-		on:click={() => (isCartOpen = !isCartOpen)}
-	>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="24"
-			height="24"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			><circle cx="8" cy="21" r="1" /><circle
-				cx="19"
-				cy="21"
-				r="1"
-			/><path
-				d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
-			/></svg
-		>
-		{#if cart.length > 0}
-			<span
-				class="absolute -right-1 -top-1 rounded-full border-2 border-orange-600 bg-white px-2 py-1 text-xs font-bold text-orange-600"
-			>
-				{totalCartItems}
-			</span>
-		{/if}
-	</button>
-
-	{#if isCartOpen || isInfoOpen}
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		<div
-			class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
-			on:click={() => {
-				isCartOpen = false;
-				isInfoOpen = false;
-			}}
-		></div>
-	{/if}
-
-	<!-- INFO DRAWER -->
-	<aside
-		class="fixed left-0 top-0 z-[70] h-full w-full max-w-md transform border-r border-slate-700 bg-[#1e293b] shadow-2xl transition-transform duration-300 ease-in-out {isInfoOpen
-			? 'translate-x-0'
-			: '-translate-x-full'}"
-	>
-		<div class="flex h-full flex-col">
-			<div
-				class="flex items-center justify-between border-b border-slate-700 bg-[#161e2e] p-6"
-			>
-				<h2 class="flex items-center gap-2 text-xl font-bold">
-					Información
-				</h2>
-				<button
-					class="text-2xl text-slate-400 hover:text-white"
-					on:click={() => (isInfoOpen = false)}>&times;</button
-				>
-			</div>
-			<div class="flex-1 space-y-6 overflow-y-auto p-6">
-				<div>
-					<h3
-						class="mb-1 text-xs font-bold uppercase tracking-widest text-blue-400"
+		<div class="mx-auto max-w-7xl px-4 py-3">
+			<div class="flex items-center gap-3">
+				<div class="hidden shrink-0 sm:block">
+					<p
+						class="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500"
 					>
-						Tienda
-					</h3>
-					<p class="text-lg font-bold">[Nombre]</p>
+						Catálogo
+					</p>
+					<p class="text-sm font-bold leading-tight text-slate-100">
+						[Nombre]
+					</p>
 				</div>
-				<div>
-					<h3
-						class="mb-1 text-xs font-bold uppercase tracking-widest text-blue-400"
-					>
-						Ubicación
-					</h3>
-					<p class="text-sm text-slate-300">[Dirección]</p>
-				</div>
-			</div>
-		</div>
-	</aside>
 
-	<!-- CART DRAWER -->
-	<aside
-		class="fixed right-0 top-0 z-[70] h-full w-full max-w-md transform border-l border-slate-700 bg-[#1e293b] shadow-2xl transition-transform duration-300 ease-in-out {isCartOpen
-			? 'translate-x-0'
-			: 'translate-x-full'}"
-	>
-		<div class="flex h-full flex-col">
-			<div
-				class="flex items-center justify-between border-b border-slate-700 bg-[#161e2e] p-6"
-			>
-				<h2 class="flex items-center gap-2 text-xl font-bold">
-					Carrito
-				</h2>
-				<button
-					class="text-2xl text-slate-400 hover:text-white"
-					on:click={() => (isCartOpen = false)}>&times;</button
-				>
-			</div>
-			<div class="flex-1 space-y-4 overflow-y-auto p-4">
-				{#if cart.length === 0}
-					<div class="py-20 text-center opacity-40"><p>Vacío</p></div>
-				{:else}
-					{#each cart as item, index (`${item.code}-${index}`)}
-						<div
-							class="flex items-center gap-4 rounded-xl border border-slate-700 bg-[#0f172a] p-3"
-						>
-							<img
-								src="https://www.truper.com/admin/images/ch/{item.code}.jpg"
-								alt=""
-								class="h-14 w-14 rounded-lg bg-white p-1 object-contain"
-							/>
-							<div class="min-w-0 flex-1">
-								<h4
-									class="truncate text-xs font-bold text-orange-400"
-								>
-									{item.code}
-								</h4>
-								<p
-									class="line-clamp-2 text-[11px] leading-tight text-slate-400"
-								>
-									{item.description}
-								</p>
-								<div
-									class="mt-1 flex items-center justify-between"
-								>
-									<span
-										class="rounded bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300"
-										>Cant: {item.quantity}</span
-									>
-									<span
-										class="text-xs font-bold text-green-400"
-										>{formatCurrency(item.usd, '$')}</span
-									>
-								</div>
-							</div>
-							<button
-								on:click={() => removeFromCart(item.code)}
-								class="p-2 text-slate-500 hover:text-red-500"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									><path
-										d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
-									/></svg
-								>
-							</button>
-						</div>
-					{/each}
-				{/if}
-			</div>
-			<div class="border-t border-slate-700 bg-[#161e2e] p-6">
-				<div class="mb-4 flex justify-between text-lg font-bold">
-					<span>Total:</span>
-					<span class="text-green-400"
-						>{formatCurrency(cartTotal, '$')}</span
+				<!-- Search -->
+				<div class="relative flex-1">
+					<svg
+						class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
 					>
-				</div>
-				<button
-					class="w-full rounded-xl bg-orange-600 py-3 text-sm font-bold uppercase tracking-widest transition-colors hover:bg-orange-500"
-					>Finalizar</button
-				>
-			</div>
-		</div>
-	</aside>
+						<circle cx="11" cy="11" r="7" />
+						<line x1="21" y1="21" x2="16.65" y2="16.65" />
+					</svg>
 
-	<main class="mx-auto max-w-7xl px-4 py-8">
-		<header
-			class="sticky top-0 z-40 mb-8 border-b border-slate-700 bg-[#0f172a]/95 py-2 backdrop-blur"
-		>
-			<div
-				class="mx-auto flex max-w-4xl flex-col items-center gap-4 md:flex-row"
-			>
-				<div class="relative w-full flex-1">
 					<input
 						type="text"
-						placeholder="Buscar productos..."
-						class="w-full rounded-lg border border-slate-700 bg-[#1e293b] px-6 py-2 text-sm outline-none transition-all focus:border-orange-500"
-						bind:value={searchTerm}
+						value={rawQuery}
+						on:input={onQueryInput}
+						placeholder="Buscar por código, familia o descripción…"
+						class="w-full rounded-xl border border-slate-800 bg-slate-900/60 py-2.5 pl-10 pr-10 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-orange-500/60 focus:bg-slate-900"
 					/>
-					{#if searchTerm !== debouncedSearch}
-						<div class="absolute right-4 top-1/2 -translate-y-1/2">
+
+					{#if isSearching}
+						<div class="absolute right-3 top-1/2 -translate-y-1/2">
 							<div
 								class="h-4 w-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent"
 							></div>
 						</div>
+					{:else if rawQuery}
+						<button
+							type="button"
+							aria-label="Limpiar búsqueda"
+							on:click={resetAll}
+							class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+							>
+								<line x1="18" y1="6" x2="6" y2="18" />
+								<line x1="6" y1="6" x2="18" y2="18" />
+							</svg>
+						</button>
 					{/if}
 				</div>
 
+				<!-- Info -->
 				<button
-					on:click={() => (isFiltersVisible = !isFiltersVisible)}
-					class="rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-bold uppercase hover:bg-slate-700"
+					type="button"
+					aria-label="Información de la tienda"
+					on:click={() => (showInfo = true)}
+					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 transition hover:border-slate-700 hover:text-slate-100"
 				>
-					{isFiltersVisible ? 'Cerrar Familias' : 'Filtros'}
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="18"
+						height="18"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<circle cx="12" cy="12" r="10" />
+						<line x1="12" y1="16" x2="12" y2="12" />
+						<line x1="12" y1="8" x2="12.01" y2="8" />
+					</svg>
+				</button>
+
+				<!-- Basket -->
+				<button
+					type="button"
+					aria-label="Abrir carrito"
+					on:click={() => (showBasket = true)}
+					class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 transition hover:border-slate-700 hover:text-slate-100"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="18"
+						height="18"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<circle cx="8" cy="21" r="1" />
+						<circle cx="19" cy="21" r="1" />
+						<path
+							d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+						/>
+					</svg>
+					{#if basketCount > 0}
+						<span
+							class="absolute -right-1.5 -top-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-bold text-slate-950"
+						>
+							{basketCount}
+						</span>
+					{/if}
 				</button>
 			</div>
 
-			{#if isFiltersVisible}
-				<div
-					class="no-scrollbar mt-4 flex flex-nowrap justify-start gap-1.5 overflow-x-auto pb-2 md:flex-wrap md:justify-center"
+			<!-- Filter row -->
+			<div class="mt-3 flex items-center gap-2">
+				<button
+					type="button"
+					on:click={() => (showFilters = !showFilters)}
+					class="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-300 transition hover:border-slate-700 hover:text-slate-100"
 				>
-					<button
-						on:click={() => toggleFamily('Todas')}
-						class="rounded-md border px-2.5 py-1 text-[10px] font-bold transition-all {selectedFamilies.includes(
-							'Todas',
-						)
-							? 'border-orange-500 bg-orange-600 text-white'
-							: 'border-slate-700 bg-slate-800 text-slate-400'}"
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
 					>
-						TODAS
+						<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+					</svg>
+					Familias
+					{#if isFiltered}
+						<span
+							class="rounded-full bg-orange-500/20 px-1.5 text-[10px] font-bold text-orange-400"
+						>
+							{activeFamilies.length}
+						</span>
+					{/if}
+				</button>
+
+				<p
+					class="ml-auto text-[10px] font-semibold uppercase tracking-widest text-slate-500"
+				>
+					{matchedProducts.length}
+					{matchedProducts.length === 1 ? 'producto' : 'productos'}
+				</p>
+			</div>
+
+			{#if showFilters}
+				<div class="mt-3 flex flex-wrap gap-1.5">
+					<button
+						type="button"
+						on:click={() => toggleFamily(ALL_FAMILIES)}
+						class="rounded-full border px-3 py-1 text-[11px] font-semibold transition {activeFamilies.includes(
+							ALL_FAMILIES
+						)
+							? 'border-orange-500 bg-orange-500 text-slate-950'
+							: 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200'}"
+					>
+						Todas
 					</button>
-					{#each families as family}
+					{#each familyOptions as family (family)}
 						<button
+							type="button"
 							on:click={() => toggleFamily(family)}
-							class="whitespace-nowrap rounded-md border px-2.5 py-1 text-[10px] font-bold transition-all {selectedFamilies.includes(
-								family,
+							title={family}
+							class="max-w-[200px] truncate rounded-full border px-3 py-1 text-[11px] font-semibold transition {activeFamilies.includes(
+								family
 							)
-								? 'border-orange-500 bg-orange-600 text-white'
-								: 'border-slate-700 bg-slate-800 text-slate-400'}"
+								? 'border-orange-500 bg-orange-500 text-slate-950'
+								: 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200'}"
 						>
 							{family}
 						</button>
 					{/each}
 				</div>
 			{/if}
+		</div>
+	</header>
 
+	<!-- ── Catalog ──────────────────────────────────────────────────────── -->
+	<main class="mx-auto max-w-7xl px-4 py-6">
+		{#if !hydrated}
 			<div
-				class="mt-2 text-center text-[10px] font-bold uppercase tracking-widest text-slate-500"
+				class="py-24 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-600"
 			>
-				{filteredResults.length} resultados
+				Cargando catálogo…
 			</div>
-		</header>
-
-		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-			{#each displayItems as item, index (`${item?.code}-${index}`)}
-				<div
-					class="group flex flex-col overflow-hidden rounded-2xl border border-slate-700 bg-[#1e293b] transition-all hover:border-orange-500/50"
+		{:else if visibleProducts.length === 0}
+			<div
+				class="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-800 py-24 text-center"
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="32"
+					height="32"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="text-slate-700"
 				>
-					<div
-						class="relative flex h-48 items-center justify-center bg-white p-6"
+					<circle cx="11" cy="11" r="7" />
+					<line x1="21" y1="21" x2="16.65" y2="16.65" />
+				</svg>
+				<p class="text-sm font-medium text-slate-400">
+					No se encontraron productos
+				</p>
+				<button
+					type="button"
+					on:click={resetAll}
+					class="text-xs font-semibold text-orange-400 underline-offset-4 hover:underline"
+				>
+					Limpiar filtros
+				</button>
+			</div>
+		{:else}
+			<div
+				class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+			>
+				{#each visibleProducts as product (product.code)}
+					<article
+						class="group flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50 transition hover:border-slate-700 hover:bg-slate-900"
 					>
-						<img
-							src="https://www.truper.com/admin/images/ch/{item.code}.jpg"
-							alt={item.description}
-							class="max-h-full max-w-full object-contain transition-transform group-hover:scale-105"
-						/>
-						<div
-							class="absolute left-2 top-2 rounded bg-[#0f172a] px-2 py-1 text-[10px] font-bold uppercase text-slate-400"
-						>
-							{item.family}
+						<div class="relative aspect-[4/3] bg-white p-6">
+							<img
+								src={productImage(product.code)}
+								alt={product.description}
+								loading="lazy"
+								class="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+							/>
+							<span
+								class="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-slate-950/85 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300 backdrop-blur"
+								title={product._family}
+							>
+								{product._family}
+							</span>
 						</div>
-					</div>
 
-					<div class="flex flex-1 flex-col p-5">
-						<div
-							class="-mt-2 mb-2 flex items-start justify-between"
-						>
-							<div class="-mt-1 flex items-center gap-1">
+						<div class="flex flex-1 flex-col gap-3 p-4">
+							<div class="flex items-start justify-between gap-2">
 								<span
-									class="text-[9px] font-bold uppercase text-slate-500"
-									>Code:</span
+									class="font-mono text-sm font-bold text-orange-400"
 								>
+									{product.code}
+								</span>
 								<span
-									class="font-mono text-base font-bold text-orange-500"
-									>{item.code}</span
+									class="shrink-0 text-[10px] font-semibold uppercase tracking-wider {product.amount >
+									0
+										? 'text-slate-500'
+										: 'text-rose-500'}"
 								>
-							</div>
-							<div class="flex items-center gap-1">
-								<span
-									class="text-[9px] font-bold uppercase text-slate-500"
-									>Stock / Unidad:</span
-								>
-								<span
-									class="text-xs font-bold {item.amount > 0
-										? 'text-slate-300'
-										: 'text-red-500'}"
-								>
-									{item.amount} / {item.UM}
+									{product.amount > 0
+										? `${product.amount} ${product.UM ?? ''}`.trim()
+										: 'Sin stock'}
 								</span>
 							</div>
-						</div>
 
-						<h3
-							class="mb-4 h-16 text-sm font-medium leading-tight italic"
-						>
-							{item.description}
-						</h3>
+							<h3
+								class="line-clamp-2 text-sm leading-snug text-slate-300"
+								title={product.description}
+							>
+								{product.description}
+							</h3>
 
-						<div class="mt-auto space-y-3">
-							<div class="flex gap-2">
+							<div class="mt-auto space-y-3">
 								<div
-									class="flex-1 rounded-lg border border-green-700/30 bg-green-900/20 p-2 text-center"
+									class="flex items-baseline justify-between rounded-lg bg-slate-950/50 px-3 py-2"
 								>
-									<div
-										class="text-[9px] font-bold uppercase text-green-500"
-									>
-										USD
-									</div>
-									<div class="font-bold text-green-400">
-										{formatCurrency(item.usd, '$')}
-									</div>
+									<span class="font-bold text-emerald-400">
+										{formatMoney(product.usd, '$')}
+									</span>
+									<span class="text-xs text-sky-400">
+										{formatMoney(product.euro, '€')}
+									</span>
 								</div>
-								<div
-									class="flex-1 rounded-lg border border-blue-700/30 bg-blue-900/20 p-2 text-center"
+
+								<button
+									type="button"
+									on:click={() => addToBasket(product)}
+									disabled={product.amount <= 0}
+									class="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-950 transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-600"
 								>
-									<div
-										class="text-[9px] font-bold uppercase text-blue-500"
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="14"
+										height="14"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2.5"
+										stroke-linecap="round"
 									>
-										EUR
-									</div>
-									<div class="font-bold text-blue-300">
-										{formatCurrency(item.euro, '€')}
-									</div>
-								</div>
+										<line x1="12" y1="5" x2="12" y2="19" />
+										<line x1="5" y1="12" x2="19" y2="12" />
+									</svg>
+									{product.amount > 0 ? 'Añadir' : 'Sin stock'}
+								</button>
+
+								<a
+									href={datasheetUrl(product.code)}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 transition hover:text-orange-400"
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="12"
+										height="12"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path
+											d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+										/>
+										<polyline points="14 2 14 8 20 8" />
+									</svg>
+									Ficha técnica
+								</a>
 							</div>
-
-							<button
-								on:click={() => addToCart(item)}
-								class="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-700 py-2.5 font-bold text-white transition-all hover:bg-orange-600 disabled:opacity-30 disabled:hover:bg-slate-700"
-								disabled={item.amount <= 0}
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2.5"
-									><line
-										x1="12"
-										y1="5"
-										x2="12"
-										y2="19"
-									/><line
-										x1="5"
-										y1="12"
-										x2="19"
-										y2="12"
-									/></svg
-								>
-								{item.amount > 0 ? 'Añadir' : 'Sin Stock'}
-							</button>
-
-							<a
-								href={`https://www.truper.com/ficha_tecnica/controllers/index.php?codigo=${item.code}&origen=nal`}
-								target="_blank"
-								class="flex w-full items-center justify-center gap-2 rounded py-1 text-[11px] text-slate-400 transition-colors hover:text-red-400"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									width="14"
-									height="14"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									><path
-										d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-									/><polyline points="14 2 14 8 20 8" /><line
-										x1="16"
-										y1="13"
-										x2="8"
-										y2="13"
-									/><line
-										x1="16"
-										y1="17"
-										x2="8"
-										y2="17"
-									/><polyline points="10 9 9 9 8 9" /></svg
-								>
-								Ver Ficha Técnica (PDF)
-							</a>
 						</div>
-					</div>
-				</div>
-			{/each}
-		</div>
+					</article>
+				{/each}
+			</div>
+		{/if}
 
-		{#if itemsToShow < filteredResults.length}
+		{#if hasMore}
 			<div
-				class="animate-pulse py-12 text-center text-xs font-bold uppercase tracking-widest text-slate-500"
+				class="py-10 text-center text-[10px] font-semibold uppercase tracking-widest text-slate-600"
 			>
-				Cargando...
+				Cargando más…
 			</div>
 		{/if}
 	</main>
+
+	<!-- ── Backdrop ─────────────────────────────────────────────────────── -->
+	{#if showBasket || showInfo}
+		<button
+			type="button"
+			aria-label="Cerrar panel"
+			on:click={closeAll}
+			class="fixed inset-0 z-50 cursor-default bg-slate-950/70 backdrop-blur-sm"
+		></button>
+	{/if}
+
+	<!-- ── Info drawer ──────────────────────────────────────────────────── -->
+	<aside
+		aria-hidden={!showInfo}
+		class="fixed left-0 top-0 z-[60] flex h-full w-full max-w-md flex-col border-r border-slate-800 bg-slate-900 shadow-2xl transition-transform duration-300 ease-out {showInfo
+			? 'translate-x-0'
+			: '-translate-x-full'}"
+	>
+		<header
+			class="flex items-center justify-between border-b border-slate-800 px-5 py-4"
+		>
+			<h2 class="text-base font-bold text-slate-100">Información</h2>
+			<button
+				type="button"
+				aria-label="Cerrar"
+				on:click={() => (showInfo = false)}
+				class="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-800 hover:text-slate-100"
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="18"
+					height="18"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+				>
+					<line x1="18" y1="6" x2="6" y2="18" />
+					<line x1="6" y1="6" x2="18" y2="18" />
+				</svg>
+			</button>
+		</header>
+
+		<div class="flex-1 space-y-6 overflow-y-auto p-6">
+			<div>
+				<p
+					class="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-400"
+				>
+					Tienda
+				</p>
+				<p class="text-lg font-bold text-slate-100">[Nombre]</p>
+			</div>
+			<div>
+				<p
+					class="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-400"
+				>
+					Ubicación
+				</p>
+				<p class="text-sm text-slate-400">[Dirección]</p>
+			</div>
+			<div>
+				<p
+					class="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-400"
+				>
+					Contacto
+				</p>
+				<p class="text-sm text-slate-400">[Teléfono / Correo]</p>
+			</div>
+		</div>
+	</aside>
+
+	<!-- ── Basket drawer ────────────────────────────────────────────────── -->
+	<aside
+		aria-hidden={!showBasket}
+		class="fixed right-0 top-0 z-[60] flex h-full w-full max-w-md flex-col border-l border-slate-800 bg-slate-900 shadow-2xl transition-transform duration-300 ease-out {showBasket
+			? 'translate-x-0'
+			: 'translate-x-full'}"
+	>
+		<header
+			class="flex items-center justify-between border-b border-slate-800 px-5 py-4"
+		>
+			<div>
+				<h2 class="text-base font-bold text-slate-100">Carrito</h2>
+				<p class="text-xs text-slate-500">
+					{basketCount}
+					{basketCount === 1 ? 'artículo' : 'artículos'}
+				</p>
+			</div>
+			<div class="flex items-center gap-1">
+				{#if basket.length > 0}
+					<button
+						type="button"
+						on:click={clearBasket}
+						class="rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-800 hover:text-rose-400"
+					>
+						Vaciar
+					</button>
+				{/if}
+				<button
+					type="button"
+					aria-label="Cerrar"
+					on:click={() => (showBasket = false)}
+					class="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-800 hover:text-slate-100"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="18"
+						height="18"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+					>
+						<line x1="18" y1="6" x2="6" y2="18" />
+						<line x1="6" y1="6" x2="18" y2="18" />
+					</svg>
+				</button>
+			</div>
+		</header>
+
+		<div class="flex-1 overflow-y-auto px-5 py-4">
+			{#if basket.length === 0}
+				<div
+					class="flex h-full flex-col items-center justify-center gap-3 text-slate-600"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="32"
+						height="32"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<circle cx="8" cy="21" r="1" />
+						<circle cx="19" cy="21" r="1" />
+						<path
+							d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+						/>
+					</svg>
+					<p class="text-sm">Tu carrito está vacío</p>
+				</div>
+			{:else}
+				<ul class="space-y-3">
+					{#each basket as line (line.code)}
+						<li
+							class="flex gap-3 rounded-xl border border-slate-800 bg-slate-950/50 p-3"
+						>
+							<img
+								src={productImage(line.code)}
+								alt=""
+								class="h-16 w-16 shrink-0 rounded-lg bg-white p-1 object-contain"
+							/>
+
+							<div class="min-w-0 flex-1">
+								<div class="flex items-start justify-between gap-2">
+									<span
+										class="font-mono text-xs font-bold text-orange-400"
+									>
+										{line.code}
+									</span>
+									<button
+										type="button"
+										aria-label="Eliminar"
+										on:click={() => removeFromBasket(line.code)}
+										class="rounded-md p-1 text-slate-600 transition hover:bg-slate-800 hover:text-rose-400"
+									>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="14"
+											height="14"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+										>
+											<path
+												d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
+											/>
+										</svg>
+									</button>
+								</div>
+
+								<p class="line-clamp-2 text-[11px] leading-snug text-slate-400">
+									{line.description}
+								</p>
+
+								<div class="mt-2 flex items-center justify-between">
+									<div class="flex items-center gap-1">
+										<button
+											type="button"
+											aria-label="Quitar uno"
+											on:click={() => decrementLine(line.code)}
+											class="flex h-6 w-6 items-center justify-center rounded-md border border-slate-800 bg-slate-900 text-slate-400 transition hover:border-slate-700 hover:text-slate-100"
+										>
+											−
+										</button>
+										<span
+											class="w-7 text-center text-xs font-semibold text-slate-200"
+										>
+											{line.quantity}
+										</span>
+										<button
+											type="button"
+											aria-label="Añadir uno"
+											disabled={line.quantity >= line.amount}
+											on:click={() => incrementLine(line)}
+											class="flex h-6 w-6 items-center justify-center rounded-md border border-slate-800 bg-slate-900 text-slate-400 transition hover:border-slate-700 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+										>
+											+
+										</button>
+									</div>
+									<span class="text-sm font-bold text-emerald-400">
+										{formatMoney(lineTotal(line), '$')}
+									</span>
+								</div>
+							</div>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
+
+		<footer class="border-t border-slate-800 bg-slate-950/50 px-5 py-4">
+			<div class="mb-3 flex items-center justify-between">
+				<span class="text-sm text-slate-400">Total</span>
+				<span class="text-xl font-bold text-emerald-400">
+					{formatMoney(basketSubtotal, '$')}
+				</span>
+			</div>
+			<button
+				type="button"
+				disabled={basket.length === 0}
+				class="w-full rounded-xl bg-orange-500 py-3 text-xs font-bold uppercase tracking-widest text-slate-950 transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-600"
+			>
+				Finalizar compra
+			</button>
+		</footer>
+	</aside>
 </div>
 
 <style>
@@ -588,12 +878,5 @@
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
-	}
-	.no-scrollbar::-webkit-scrollbar {
-		display: none;
-	}
-	.no-scrollbar {
-		-ms-overflow-style: none;
-		scrollbar-width: none;
 	}
 </style>
