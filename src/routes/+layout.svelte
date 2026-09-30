@@ -7,7 +7,6 @@
 	import TopNavigation from './../components/UI/top_navigation.svelte';
 	export let data;
 
-	console.log($page);
 	onMount(() => {
 		// posthog.init('phc_q48EhR7TH2EIKrHDjsm1RjXa0Y7Gl6Pv90ETCN7ET3Z', {
 		// 	api_host: 'https://app.posthog.com',

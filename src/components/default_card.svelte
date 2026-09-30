@@ -5,173 +5,174 @@
 	import Icon from '@iconify/svelte';
 	import dayjs from 'dayjs';
 	import relativeTime from 'dayjs/plugin/relativeTime';
-
 	import { scale } from 'svelte/transition';
 
 	dayjs.extend(relativeTime);
 
-	export let data; // Data info for sessions and database;
-	export let delete_show; // Return function
-	export let add_show; // Return function
-	export let el; // Element info
+	export let data;
+	export let delete_show;
+	export let add_show;
+	export let el;
 	export let shows = true;
 	export let defaultClass = '';
 
-	// if (dev) console.log(el, $show);
+	$: nextEpisode = el.next_episode_to_air;
+	$: isSeasonPremiere = nextEpisode?.episode_number === 1;
+	$: followed = $show.includes(String(el.id));
 
-	if (el.next_episode_to_air)
-		el.air_date = dayjs(el.next_episode_to_air.air_date);
-	else el.air_date = dayjs(el.first_air_date);
+	$: airDate = nextEpisode
+		? dayjs(nextEpisode.air_date)
+		: dayjs(el.first_air_date);
 
-	// console.log(el.first_air_date, el.name);
-	el.address = cfg.show_address(el);
-	el.followed = $show.includes(String(el.id));
+	$: address = cfg.show_address(el);
+
+	$: imageSrc = el.poster_path
+		? cfg.image_path + '780' + el.poster_path
+		: el.backdrop_path
+			? cfg.image_path + '780' + el.backdrop_path
+			: null;
+
+	$: accentRing = isSeasonPremiere
+		? 'ring-amber-400/50'
+		: followed
+			? 'ring-sky-500/50'
+			: 'ring-white/10';
+
+	$: bottomGradient = isSeasonPremiere
+		? 'from-amber-950/95 via-black/60'
+		: followed
+			? 'from-sky-950/95 via-black/60'
+			: 'from-black/95 via-black/60';
+
+	function toggleFollow() {
+		if (followed) delete_show(el.id);
+		else add_show(el.id, el);
+	}
 
 	if (dev) console.log(el, $show, $show.includes(el.id));
 </script>
 
 <a
-	in:scale={{ duration: 500 }}
-	out:scale={{ duration: 500 }}
-	href={el.address}
-	class="relative group sm:min-w-[200px] {shows
-		? 'aspect-[1/1.5] min-w-[48%] '
-		: 'w-full min-w-[200px]'} flex {el.poster_path
-		? ''
-		: 'bg-zinc-950 border-gray-600'} rounded-xl overflow-hidden cursor-pointer border
-        {el.next_episode_to_air?.episode_number === 1
-		? 'border-yellow-800'
-		: el.followed
-			? 'border-sky-800'
-			: 'border-transparent'} hover:border-slate-800 duration-500 overflow-hidden {defaultClass}"
+	in:scale={{ duration: 400, start: 0.95 }}
+	out:scale={{ duration: 400 }}
+	href={address}
+	class="relative group block overflow-hidden rounded-2xl bg-zinc-900
+	       ring-1 {accentRing} cursor-pointer transition-all duration-500
+	       hover:ring-2
+	       hover:shadow-2xl hover:shadow-black/60
+	       {shows
+		? 'aspect-[2/3] min-w-[240px] sm:min-w-[280px]'
+		: 'w-full min-w-[280px] aspect-[2/3]'}
+	       {defaultClass}"
 >
-	<!-- {void console.log(el.poster_path) || ''} -->
-	{#if el.poster_path}
+	<!-- Poster -->
+	{#if imageSrc}
 		<img
-			alt="Poster Imagen"
-			src={cfg.image_path + '780' + el.poster_path}
-			class="absolute object-contain w-full duration-300 group-hover:scale-110"
-		/>
-	{:else if el.backdrop_path}
-		<img
-			alt="Poster Imagen"
-			src={cfg.image_path + '780' + el.backdrop_path}
-			class="absolute object-cover w-full h-full duration-300 group-hover:scale-110"
+			alt={el.name || 'Poster'}
+			src={imageSrc}
+			loading="lazy"
+			class="absolute inset-0 h-full w-full object-cover
+			       transition-transform duration-700 ease-out
+			       group-hover:scale-105"
 		/>
 	{:else}
 		<div
-			class="flex items-center justify-center w-full h-full duration-300 group-hover:blur"
+			class="absolute inset-0 flex items-center justify-center bg-zinc-950"
 		>
 			<Icon
 				icon="mdi:file-image-remove"
-				class="w-20 text-white text-9xl "
+				class="h-20 w-20 text-zinc-700"
 			/>
 		</div>
 	{/if}
 
+	<!-- Rating pill (top-left) -->
 	{#if el.vote_average}
 		<div
-			class="absolute top-0 right-0 flex items-center justify-center h-6 gap-1 px-1 text-xs text-white bg-black bg-opacity-75 rounded-bl-lg"
+			class="absolute top-3 left-3 z-10 flex items-center gap-1 rounded-full
+			       bg-black/60 px-2.5 py-1 text-xs font-semibold text-white
+			       ring-1 ring-white/15 backdrop-blur-md"
 		>
-			<Icon icon="mdi:star" class="text-xl text-yellow-500" />
-			<span class="">
+			<Icon icon="mdi:star" class="h-3.5 w-3.5 text-amber-400" />
+			<span>
 				{Number(el.vote_average).toFixed(
-					Number(el.vote_average) % 10 === 0 ? 0 : 1
+					Number(el.vote_average) % 10 === 0 ? 0 : 1,
 				)}
 			</span>
 		</div>
 	{/if}
+
+	<!-- Follow button (top-right) -->
+	{#if data.session}
+		<button
+			type="button"
+			aria-label={followed ? 'Unfollow show' : 'Follow show'}
+			class="absolute top-3 right-3 z-20 flex h-9 w-9 items-center justify-center
+			       rounded-full bg-black/60 ring-1 ring-white/15 backdrop-blur-md
+			       transition-all duration-300
+			       hover:scale-110 hover:bg-black/90
+			       opacity-100 sm:opacity-0 sm:group-hover:opacity-100
+			       {followed ? 'text-sky-400' : 'text-white/80 hover:text-white'}"
+			on:click|preventDefault|stopPropagation={toggleFollow}
+		>
+			<Icon
+				icon={followed ? 'mdi:bookmark' : 'mdi:bookmark-outline'}
+				class="h-5 w-5"
+			/>
+		</button>
+	{/if}
+
+	<!-- Bottom overlay -->
 	<div
-		class="absolute bottom-0 flex flex-col w-full bg-gradient-to-t {el
-			.next_episode_to_air?.episode_number === 1
-			? 'from-yellow-800'
-			: el.followed
-				? 'from-sky-800'
-				: 'from-black'} to-transparent backdrop-blur py-2 text-base text-white duration-300 justify-center"
+		class="absolute inset-x-0 bottom-0 z-10 flex flex-col justify-end
+		       bg-gradient-to-t {bottomGradient} to-transparent
+		       p-4 pt-20"
 	>
-		{#if el.next_episode_to_air}
+		<!-- Next episode / status — reveals on hover -->
+		{#if nextEpisode}
 			<div
-				class="flex flex-col h-0 duration-300 opacity-0 group-hover:opacity-100 group-hover:h-12"
+				class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-out
+				       group-hover:grid-rows-[1fr]"
 			>
-				<span
-					class="px-5 text-xs text-center truncate line-clamp-1 text-clip text-pretty"
-				>
-					<!-- {el.next_episode_to_air.air_date} -->
-					S{el.next_episode_to_air.season_number} E{el
-						.next_episode_to_air.episode_number}
-				</span>
-				<span
-					class="px-5 text-xs text-center truncate line-clamp-1 text-clip text-pretty"
-				>
-					{el.next_episode_to_air.name}
-				</span>
-				<hr class="my-1 border-gray-800" />
+				<div class="overflow-hidden">
+					<div class="mb-2 flex items-center gap-2">
+						<span
+							class="rounded-md bg-white/10 px-1.5 py-0.5 text-[10px]
+							       font-semibold uppercase tracking-wider text-white/80
+							       ring-1 ring-white/10"
+						>
+							S{nextEpisode.season_number} · E{nextEpisode.episode_number}
+						</span>
+					</div>
+					<p class="mb-2 line-clamp-1 text-xs text-white/70">
+						{nextEpisode.name}
+					</p>
+				</div>
 			</div>
 		{:else if el.status}
 			<div
-				class="flex flex-col h-0 duration-300 opacity-0 group-hover:opacity-100 group-hover:h-6"
+				class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-out
+				       group-hover:grid-rows-[1fr]"
 			>
-				<span
-					class="px-5 text-xs text-center truncate line-clamp-1 text-clip text-pretty"
-				>
-					{el.status}
-				</span>
-				<hr class="my-1 border-gray-800" />
+				<div class="overflow-hidden">
+					<p class="mb-2 text-xs text-white/70">{el.status}</p>
+				</div>
 			</div>
 		{/if}
 
-		<span class="text-center truncate line-clamp-1 text-clip text-pretty">
+		<!-- Title -->
+		<h3
+			class="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-white"
+		>
 			{el.name}
-		</span>
+		</h3>
+
+		<!-- Air date -->
+		<p class="mt-1 text-xs font-medium text-white/60">
+			<span class="group-hover:hidden">{airDate.fromNow()}</span>
+			<span class="hidden group-hover:inline"
+				>{airDate.format('MMM D, YYYY')}</span
+			>
+		</p>
 	</div>
-
-	<span
-		class="absolute flex items-center h-6 px-2 text-sm text-center text-white truncate bg-black bg-opacity-75 rounded-br-lg line-clamp-1 text-clip text-pretty"
-	>
-		<span class="flex duration-300 group-hover:hidden">
-			{el?.air_date?.fromNow()}</span
-		>
-		<span class="hidden duration-300 group-hover:flex">
-			{el?.air_date?.format('MMMM D')}</span
-		>
-	</span>
-
-	{#if data.session}
-		<span
-			class="absolute flex items-center justify-center w-full h-full duration-300 sm:group-hover:opacity-100 sm:opacity-0"
-		>
-			{#if el.followed}
-				<a
-					data-sveltekit-preload-data="false"
-					class="group-hover:bg-black rounded-xl group-hover:bg-opacity-50"
-					href={'/show/remove/' + el.id}
-					on:click|preventDefault={() => {
-						delete_show(el.id);
-						el.followed ^= true;
-					}}
-				>
-					<Icon
-						icon="mdi:bookmark-remove"
-						class="text-4xl text-red-500 duration-300 rounded sm:text-7xl hover:text-rose-800"
-					/>
-				</a>
-			{:else}
-				<a
-					data-sveltekit-preload-data="false"
-					class="group-hover:bg-black rounded-xl group-hover:bg-opacity-50"
-					href={'/show/add/' + el.id}
-					on:click|preventDefault={() => {
-						// show_toggle(data.supabase, data.session.user.id, el.id);
-						add_show(el.id, el);
-						el.followed ^= true;
-					}}
-				>
-					<Icon
-						icon="mdi:bookmark-plus"
-						class="text-4xl duration-300 rounded sm:text-7xl text-slate-200 hover:text-sky-500"
-					/>
-				</a>
-			{/if}
-		</span>
-	{/if}
 </a>

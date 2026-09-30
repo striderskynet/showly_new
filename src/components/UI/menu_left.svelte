@@ -4,204 +4,128 @@
 	import BottomNavigation from './bottom_navigation.svelte';
 
 	export let data;
-	//console.log(data);
-	let menu_openned = [];
 
-	let admin_menu = [
-		{
-			url: '/shows',
-			icon: 'mdi:tv-box',
-			label: 'My Shows',
-			active: true,
-		},
-		{
-			url: '/calendar',
-			icon: 'mdi:calendar',
-			label: 'Calendar',
-			active: true,
-		},
-		{ url: '/hot', icon: 'mdi:fire', label: 'Upcoming', active: true },
-		{
-			url: '/trending',
-			icon: 'mdi:format-list-bulleted-triangle',
-			label: 'Trending',
-			active: true,
-		},
+	const main_items = [
+		{ url: '/shows',    icon: 'mdi:tv-box',                        label: 'My Shows' },
+		{ url: '/calendar', icon: 'mdi:calendar',                      label: 'Calendar' },
+		{ url: '/hot',      icon: 'mdi:fire',                          label: 'Upcoming' },
+		{ url: '/trending', icon: 'mdi:format-list-bulleted-triangle', label: 'Trending' },
 	];
 
-	//console.log($page);
-	// console.log($page, admin_menu);
+	const discover_items = [
+		{ url: '/movies', icon: 'mdi:movie-roll', label: 'Movies', dot: true },
+		{ url: '/search', icon: 'mdi:search',     label: 'Search' },
+	];
+
+	const bottom_items = [
+		{ url: '#', icon: 'mdi:help-circle', label: 'Help' },
+		{ url: '#', icon: 'mdi:cog',         label: 'Settings' },
+	];
+
+	// Shared class tokens — keeps every item visually identical
+	const itemBase   = 'relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200';
+	const itemIdle   = 'text-zinc-400 hover:bg-white/5 hover:text-white';
+	const itemActive = 'bg-white/10 text-white';
+	const labelClass = 'whitespace-nowrap opacity-0 transition-opacity duration-200 delay-100 group-hover:opacity-100';
+
+	$: pathname = $page.url.pathname;
+	$: isActive = (url) => pathname === url || pathname.startsWith(url + '/');
 </script>
 
-<div
-	class="hidden sm:flex flex-col justify-between h-screen overflow-y-auto fixed w-16 group hover:w-52 duration-300 items-start bg-gray-900 left-0 top-0 text-gray-200 border-r-2 border-r-gray-800 overflow-hidden z-50"
+<!-- Sidebar (desktop) -->
+<aside
+	class="group fixed inset-y-0 left-0 z-50 hidden w-16 flex-col overflow-hidden
+	       border-r border-zinc-800 bg-zinc-950 text-zinc-300
+	       transition-[width] duration-300 ease-out
+	       hover:w-64 hover:shadow-2xl hover:shadow-black/60
+	       sm:flex"
 >
-	<section
-		class="flex px-2 py-2 w-full justify-center flex-col items-center text-2xl font-bold h-12 mt-2 duration-300"
-	>
-		<img
-			src="/favicon.png"
-			alt="Admin Logo"
-			class="opacity-100 group-hover:opacity-0 absolute duration-300 delay-100 w-6 rounded"
-		/>
-		<div
-			class="opacity-0 group-hover:opacity-100 duration-300 delay-100 flex justify-center flex-col items-center z-50"
+	<!-- Logo -->
+	<a href="/" class="flex h-16 shrink-0 items-center gap-3 px-4">
+		<img src="/favicon.png" alt="Showly" class="h-8 w-8 shrink-0 rounded-md" />
+		<span
+			class="whitespace-nowrap text-lg font-bold tracking-tight text-white
+			       opacity-0 transition-opacity duration-200 delay-100
+			       group-hover:opacity-100"
 		>
-			<a href="/">Showly</a>
-			<!-- <div class="flex text-[10px] uppercase font-normal -mt-4">
-				<img
-					src="/favicon.png"
-					alt="Admin Logo"
-					class="absolute duration-300 w-6 rounded"
-				/>
-			</div> -->
-		</div>
-	</section>
+			Showly
+		</span>
+	</a>
 
-	<section
-		class="h-full flex flex-col gap-2 mt-2 text-sm w-full items-start px-2"
-	>
-		<hr class="flex border-t border-gray-700 w-full mb-2" />
-		{#each admin_menu as s, i}
-			{@const is_active = $page.url.pathname === s.url}
-			<section
-				class="flex duration-500 transition-all gap-2 flex-col ml-2"
-			>
-				<!-- {#if is_active}{void (menu_openned[m.label] = true) ||
-							''}{/if}
-					{#if s.active} -->
-				<a
-					href={s.active ? s.url : '#'}
-					class:active={is_active}
-					class="relative bg-transparent p-1 text-gray-400 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300"
-				>
-					<Icon icon={s.icon} class="text-2xl" />
-					<span
-						class="opacity-0 group-hover:opacity-100 w-32 px-2 delay-75 duration-300"
-					>
-						{s.label}
-					</span>
-				</a>
-				<!-- {/if} -->
-			</section>
+	<div class="mx-4 h-px shrink-0 bg-zinc-800/80"></div>
+
+	<!-- Main nav -->
+	<nav class="flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-2 py-3">
+		{#each main_items as item}
+			{@const active = isActive(item.url)}
+			<a href={item.url} class="{itemBase} {active ? itemActive : itemIdle}">
+				{#if active}
+					<span class="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-sky-400"></span>
+				{/if}
+				<Icon icon={item.icon} class="h-6 w-6 shrink-0" />
+				<span class={labelClass}>{item.label}</span>
+			</a>
 		{/each}
 
-		<hr class="flex border-t border-gray-700 w-full mb-2" />
+		<div class="my-2 h-px bg-zinc-800/80"></div>
 
-		<section
-			class="flex duration-500 transition-all gap-2 flex-col ml-2 relative"
-		>
-			<a
-				href="/movies"
-				class:active={$page.url.pathname.includes('/movies')}
-				class="relative bg-transparent p-1 text-gray-400 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300"
-			>
-				<span class="relative flex">
-					<Icon icon="mdi:movie-roll" class="text-2xl" />
-					<span
-						class="w-2 h-2 flex bg-red-500 rounded-full absolute right-0 animate-bounce"
-					/>
-				</span>
-				<span
-					class="opacity-0 group-hover:opacity-100 w-32 px-2 delay-75 duration-300"
-				>
-					Movies
-				</span>
+		{#each discover_items as item}
+			{@const active = isActive(item.url)}
+			<a href={item.url} class="{itemBase} {active ? itemActive : itemIdle}">
+				{#if active}
+					<span class="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-sky-400"></span>
+				{/if}
+				<div class="relative shrink-0">
+					<Icon icon={item.icon} class="h-6 w-6" />
+					{#if item.dot}
+						<span class="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-zinc-950"></span>
+					{/if}
+				</div>
+				<span class={labelClass}>{item.label}</span>
 			</a>
-		</section>
-		<hr class="flex border-t border-gray-700 w-full my-2" />
+		{/each}
+	</nav>
 
-		<section class="flex duration-500 transition-all gap-2 flex-col ml-2">
-			<a
-				href="/search"
-				class:active={$page.url.pathname.includes('/search')}
-				class="relative bg-transparent p-1 text-gray-400 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300"
-			>
-				<Icon icon="mdi:search" class="text-2xl" />
-				<span
-					class="opacity-0 group-hover:opacity-100 w-32 px-2 delay-75 duration-300"
-				>
-					Search
-				</span>
+	<!-- Bottom: help / settings / user -->
+	<div class="flex flex-col gap-1 px-2 pb-3">
+		<div class="mx-2 mb-2 h-px bg-zinc-800/80"></div>
+
+		{#each bottom_items as item}
+			<a href={item.url} class="{itemBase} {itemIdle}">
+				<Icon icon={item.icon} class="h-6 w-6 shrink-0" />
+				<span class={labelClass}>{item.label}</span>
 			</a>
-		</section>
-	</section>
-	<section
-		class="h-full flex flex-col gap-2 mt-2 text-sm w-full items-start px-2 justify-end ml-2 mb-2"
-	>
-		<a
-			href={'#'}
-			class="relative bg-transparent p-1 text-gray-400 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300"
-		>
-			<Icon icon="mdi:help-circle" class="text-2xl" />
-			<span
-				class="opacity-0 group-hover:opacity-100 w-32 delay-75 duration-300 pl-1"
-			>
-				Help
-			</span>
-		</a>
+		{/each}
 
-		<a
-			href={'#'}
-			class="relative bg-transparent p-1 text-gray-400 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300"
-		>
-			<Icon icon="mdi:cog" class="text-2xl" />
-			<span
-				class="opacity-0 group-hover:opacity-100 w-32 delay-75 duration-300 pl-1"
-				>Settings
-			</span>
-		</a>
+		<div class="mx-2 my-2 h-px bg-zinc-800/80"></div>
 
 		{#if data.session}
-			<a
-				href={'#'}
-				class="relative bg-transparent p-1 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300 -ml-1 text-sky-500"
-			>
+			<a href="/profile" class="{itemBase} {itemIdle}">
 				<img
 					src={data.session.user.user_metadata.avatar_url}
 					alt="User Avatar"
-					class="w-8 aspect-square flex rounded-xl"
+					class="h-6 w-6 shrink-0 rounded-md object-cover ring-1 ring-white/10"
 				/>
-
-				<span
-					class="opacity-0 group-hover:opacity-100 delay-75 duration-300 text-pretty w-40 truncate px-2 -ml-2"
-				>
+				<span class="{labelClass} w-36 truncate text-xs text-zinc-400">
 					{data.session.user.email}
 				</span>
 			</a>
-			<hr class="flex border-t border-gray-700 w-full -ml-2" />
+
 			<a
 				href="/logout"
-				class="relative bg-transparent p-1 text-rose-400 rounded hover:bg-rose-400 hover:text-white flex items-center gap-2 duration-300"
+				class="{itemBase} text-rose-400/90 hover:bg-rose-500/10 hover:text-rose-300"
 			>
-				<Icon icon="mdi:logout" class="text-2xl" />
-				<span
-					class="opacity-0 group-hover:opacity-100 delay-75 duration-300 w-32 pl-1"
-					>Logout</span
-				>
+				<Icon icon="mdi:logout" class="h-6 w-6 shrink-0" />
+				<span class={labelClass}>Logout</span>
 			</a>
 		{:else}
-			<a
-				href="/login"
-				class="relative bg-transparent p-1 rounded hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300 -ml-1 text-sky-500"
-			>
-				<Icon icon="mdi:user" class="w-8 text-2xl" />
-
-				<span
-					class="opacity-0 group-hover:opacity-100 delay-75 duration-300 w-32"
-				>
-					Log In
-				</span>
+			<a href="/login" class="{itemBase} text-sky-400 hover:bg-sky-500/10 hover:text-sky-300">
+				<Icon icon="mdi:account-circle-outline" class="h-6 w-6 shrink-0" />
+				<span class={labelClass}>Log In</span>
 			</a>
 		{/if}
-	</section>
-</div>
+	</div>
+</aside>
 
-<!-- Bottom NaV -->
-<BottomNavigation {admin_menu} />
-
-<style type="postcss">
-	.active {
-		@apply bg-gray-300 text-gray-800;
-	}
-</style>
+<!-- Mobile nav -->
+<BottomNavigation items={main_items} />
