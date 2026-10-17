@@ -2,7 +2,7 @@
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
 
-	export let admin_menu;
+	export let items;
 </script>
 
 <div class="flex sm:hidden fixed w-screen bottom-0 justify-center z-50">
@@ -16,7 +16,7 @@
 				class="opacity-100 group-hover:opacity-0 duration-300 w-12 aspect-square rounded absolute -top-5"
 			/>
 		</a>
-		{#each admin_menu as s, i}
+		{#each items as s, i}
 			{@const is_active = $page.url.pathname === s.url}
 
 			<div
