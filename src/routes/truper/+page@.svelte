@@ -3,7 +3,7 @@
 	import cfg from '$config/main';
 	import { show, show_add, show_del } from '$lib/shows.js';
 	import Icon from '@iconify/svelte';
-	import Spinner from './../components/UI/spinner.svelte';
+	import Spinner from '../../components/UI/spinner.svelte';
 
 	import EmptyShows from '$components/Feedback/empty_shows.svelte';
 	import NotLogged from '$components/Feedback/not_logged.svelte';
@@ -40,10 +40,15 @@
 
 	const fetch_show = async (id) => {
 		try {
-			const res = await fetch(cfg.api_show_id + id, cfg.api_options).then((r) => r.json());
+			const res = await fetch(cfg.api_show_id + id, cfg.api_options).then(
+				(r) => r.json(),
+			);
 			res.day_diff = 10000;
 			if (res.next_episode_to_air) {
-				const newDay = dayjs(res.next_episode_to_air.air_date, 'YYYY-MM-DD');
+				const newDay = dayjs(
+					res.next_episode_to_air.air_date,
+					'YYYY-MM-DD',
+				);
 				res.day_diff = newDay.diff(dayjs(), 'days');
 				res.day_diff_title = newDay.fromNow();
 			}
@@ -111,7 +116,9 @@
 </script>
 
 <div class="flex min-h-screen flex-col p-5">
-	<div class="relative mt-10 flex flex-wrap justify-center gap-3 sm:mt-0 sm:justify-start">
+	<div
+		class="relative mt-10 flex flex-wrap justify-center gap-3 sm:mt-0 sm:justify-start"
+	>
 		{#if data.session}
 			{#if loading}
 				<div class="flex w-full items-center justify-center py-10">
@@ -130,18 +137,28 @@
 								shows={false}
 							/>
 						{/each}
-						<svelte:fragment slot="controls" let:setIndex let:currentIndex>
+						<svelte:fragment
+							slot="controls"
+							let:setIndex
+							let:currentIndex
+						>
 							<button
 								on:click={() => setIndex(currentIndex - 1)}
 								class="absolute top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
 							>
-								<Icon icon="mdi:chevron-left-circle" class="text-5xl" />
+								<Icon
+									icon="mdi:chevron-left-circle"
+									class="text-5xl"
+								/>
 							</button>
 							<button
 								on:click={() => setIndex(currentIndex + 1)}
 								class="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
 							>
-								<Icon icon="mdi:chevron-right-circle" class="text-5xl" />
+								<Icon
+									icon="mdi:chevron-right-circle"
+									class="text-5xl"
+								/>
 							</button>
 						</svelte:fragment>
 					</TinySlider>
@@ -162,7 +179,10 @@
 		{:then list}
 			<div class="mb-2 flex w-full justify-between px-10 text-slate-500">
 				<span>Upcoming</span>
-				<a href="/hot" class="z-10 flex items-center gap-1 duration-300 hover:text-white">
+				<a
+					href="/hot"
+					class="z-10 flex items-center gap-1 duration-300 hover:text-white"
+				>
 					More <Icon icon="mdi:chevron-right" class="text-2xl" />
 				</a>
 			</div>
@@ -191,7 +211,10 @@
 						on:click={() => setIndex(currentIndex + 1)}
 						class="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
 					>
-						<Icon icon="mdi:chevron-right-circle" class="text-5xl" />
+						<Icon
+							icon="mdi:chevron-right-circle"
+							class="text-5xl"
+						/>
 					</button>
 				</svelte:fragment>
 			</TinySlider>
@@ -206,7 +229,10 @@
 		{:then list}
 			<div class="flex w-full justify-between px-10 text-slate-500">
 				<span>Trending</span>
-				<a href="/trending" class="z-10 flex items-center gap-1 duration-300 hover:text-white">
+				<a
+					href="/trending"
+					class="z-10 flex items-center gap-1 duration-300 hover:text-white"
+				>
 					More <Icon icon="mdi:chevron-right" class="text-2xl" />
 				</a>
 			</div>
@@ -235,7 +261,10 @@
 						on:click={() => setIndex(currentIndex + 1)}
 						class="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
 					>
-						<Icon icon="mdi:chevron-right-circle" class="text-5xl" />
+						<Icon
+							icon="mdi:chevron-right-circle"
+							class="text-5xl"
+						/>
 					</button>
 				</svelte:fragment>
 			</TinySlider>
