@@ -3,7 +3,8 @@
 	import Icon from '@iconify/svelte';
 	import BottomNavigation from './bottom_navigation.svelte';
 
-	export let data;
+	/** @type {{data: any}} */
+	let { data } = $props();
 
 	const main_items = [
 		{ url: '/shows', icon: 'mdi:tv-box', label: 'My Shows' },
@@ -52,8 +53,8 @@
 		'absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-rose-500 ' +
 		'ring-2 ring-zinc-950';
 
-	$: pathname = $page.url.pathname;
-	$: isActive = (url) => pathname === url || pathname.startsWith(url + '/');
+	let pathname = $derived($page.url.pathname);
+	let isActive = $derived((url) => pathname === url || pathname.startsWith(url + '/'));
 </script>
 
 <!-- ============================ SIDEBAR ============================ -->

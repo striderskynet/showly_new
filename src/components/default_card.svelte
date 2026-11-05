@@ -1,4 +1,6 @@
 <script>
+	import { preventDefault, stopPropagation } from 'svelte/legacy';
+
 	import { dev } from '$app/environment';
 	import cfg from '$config/main';
 	import { show } from '$lib/shows.js';
@@ -9,78 +11,81 @@
 
 	dayjs.extend(relativeTime);
 
-	export let data;
-	export let delete_show;
-	export let add_show;
-	export let el;
-	export let shows = true;
-	export let defaultClass = '';
+	/** @type {{data: any, delete_show: any, add_show: any, el: any, shows?: boolean, defaultClass?: string}} */
+	let {
+		data,
+		delete_show,
+		add_show,
+		el,
+		shows = true,
+		defaultClass = ''
+	} = $props();
 
 	// ---- Derived ----
-	$: nextEpisode = el.next_episode_to_air ?? null;
-	$: isSeasonPremiere = nextEpisode?.episode_number === 1;
+	let nextEpisode = $derived(el.next_episode_to_air ?? null);
+	let isSeasonPremiere = $derived(nextEpisode?.episode_number === 1);
 
 	// El store puede contener numbers (TMDb) o strings (Supabase) — normalizamos ambos lados.
-	$: followed = $show.some((id) => String(id) === String(el.id));
+	let followed = $derived($show.some((id) => String(id) === String(el.id)));
 
-	$: airDate = nextEpisode?.air_date
+	let airDate = $derived(nextEpisode?.air_date
 		? dayjs(nextEpisode.air_date)
 		: el.first_air_date
 			? dayjs(el.first_air_date)
-			: null;
+			: null);
 
-	$: daysUntil = airDate ? airDate.diff(dayjs(), 'days') : Infinity;
-	$: isUpcoming = daysUntil > 0;
-	$: isPremiereSoon = isUpcoming && daysUntil <= 30;
+	let daysUntil = $derived(airDate ? airDate.diff(dayjs(), 'days') : Infinity);
+	let isUpcoming = $derived(daysUntil > 0);
+	let isPremiereSoon = $derived(isUpcoming && daysUntil <= 30);
 
-	$: address = cfg.show_address(el);
+	let address = $derived(cfg.show_address(el));
 
-	$: imageSrc = el.poster_path
+	let imageSrc = $derived(el.poster_path
 		? cfg.image_path + '500' + el.poster_path
 		: el.backdrop_path
 			? cfg.image_path + '780' + el.backdrop_path
-			: null;
+			: null);
 
-	$: ratingValue = Number(el.vote_average) || 0;
-	$: hasRating = ratingValue > 0;
-	$: ratingText = Number.isInteger(ratingValue)
+	let ratingValue = $derived(Number(el.vote_average) || 0);
+	let hasRating = $derived(ratingValue > 0);
+	let ratingText = $derived(Number.isInteger(ratingValue)
 		? ratingValue.toFixed(0)
-		: ratingValue.toFixed(1);
-	$: ratingColor =
-		ratingValue >= 8
+		: ratingValue.toFixed(1));
+	let ratingColor =
+		$derived(ratingValue >= 8
 			? 'text-emerald-400'
 			: ratingValue >= 7
 				? 'text-sky-400'
 				: ratingValue >= 6
 					? 'text-yellow-400'
-					: 'text-amber-400';
+					: 'text-amber-400');
 
 	// Fecha inteligente: relativa para cerca, absoluta para lejos.
-	$: dateLabel = (() => {
+	let dateLabel = $derived((() => {
 		if (!airDate) return null;
 		if (Math.abs(daysUntil) <= 90) return airDate.fromNow();
 		return airDate.format('MMM D, YYYY');
-	})();
+	})());
 
-	$: accentRing = isSeasonPremiere
+	let accentRing = $derived(isSeasonPremiere
 		? 'ring-amber-400/50'
 		: followed
 			? 'ring-sky-500/50'
-			: 'ring-white/10';
+			: 'ring-white/10');
 
-	$: bottomGradient = isSeasonPremiere
+	let bottomGradient = $derived(isSeasonPremiere
 		? 'from-amber-950/95 via-black/60'
 		: followed
 			? 'from-sky-950/95 via-black/60'
-			: 'from-black/95 via-black/60';
+			: 'from-black/95 via-black/60');
 
 	// Quitamos min-w-[280px] en el caso slider: TinySlider ya controla el ancho del slide.
-	$: sizingClass = shows
+	let sizingClass = $derived(shows
 		? 'aspect-[2/3] min-w-[240px] sm:min-w-[280px]'
-		: 'aspect-[2/3] w-full';
+		: 'aspect-[2/3] w-full');
 
 	// ---- Actions ----
-	let pending = false;
+	let pending = $state(false);
 	async function toggleFollow() {
 		if (pending) return;
 		pending = true;
@@ -169,7 +174,7 @@
 				       opacity-100 sm:opacity-0 sm:group-hover:opacity-100
 				       disabled:cursor-wait disabled:opacity-70
 				       {followed ? 'text-sky-400' : 'text-white/80 hover:text-white'}"
-				on:click|preventDefault|stopPropagation={toggleFollow}
+				onclick={stopPropagation(preventDefault(toggleFollow))}
 			>
 				<Icon
 					icon={pending

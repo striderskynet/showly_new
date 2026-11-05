@@ -12,9 +12,10 @@
 
 	dayjs.extend(relativeTime);
 
-	export let data;
+	/** @type {{data: any}} */
+	let { data } = $props();
 
-	let show_list = [];
+	let show_list = $state([]);
 
 	function compare(a, b) {
 		if (a.day_diff < b.day_diff) {

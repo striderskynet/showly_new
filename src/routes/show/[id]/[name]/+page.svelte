@@ -1,4 +1,7 @@
 <script>
+	import { createBubbler, stopPropagation } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { dev } from '$app/environment';
 	import cfg from '$config/main';
 	import { humanFileSize } from '$lib/index.js';
@@ -11,99 +14,18 @@
 
 	dayjs.extend(relativeTime);
 
-	export let data;
+	/** @type {{data: any}} */
+	let { data } = $props();
 
-	let torrent_modal = false;
+	let torrent_modal = $state(false);
 
-	/* ============ Derived ============ */
-	$: showData = data.show;
-	$: torrents = data.torrents ?? [];
 
-	$: mainPoster =
-		showData?.images?.posters?.find(
-			(p) => p.iso_639_1 === 'en' && p.iso_3166_1 === 'US',
-		) ??
-		showData?.images?.posters?.find((p) => p.iso_639_1 === 'en') ??
-		showData?.images?.posters?.[0];
 
-	$: posterUrl = mainPoster?.file_path
-		? `${cfg.image_path}500${mainPoster.file_path}`
-		: showData?.poster_path
-			? `${cfg.image_path}500${showData.poster_path}`
-			: null;
 
-	$: backdropUrl = showData?.backdrop_path
-		? `${cfg.image_path}1280${showData.backdrop_path}`
-		: null;
-	$: network = showData?.networks?.[0];
-	$: isFollowed = $show.includes(showData?.id);
-	$: year = showData?.first_air_date
-		? dayjs(showData.first_air_date).format('YYYY')
-		: null;
-	$: runtime = showData?.episode_run_time?.[0] ?? null;
-	$: rating = showData?.vote_average;
-	$: ratingStyle = getRatingStyle(rating);
-	$: statusStyle = getStatusStyle(showData?.status);
 
-	$: creators = showData?.created_by ?? [];
-	$: cast = showData?.credits?.cast ?? [];
-	$: crew = showData?.credits?.crew ?? [];
-	$: companies = showData?.production_companies ?? [];
-	$: countries = showData?.production_countries ?? [];
-	$: languages = showData?.spoken_languages ?? [];
-	$: seasons = showData?.seasons ?? [];
-	$: recommendations = showData?.recommendations?.results ?? [];
-	$: videos = (showData?.videos?.results ?? []).filter(
-		(v) => v.site === 'YouTube',
-	);
-	$: trailer =
-		videos.filter((v) => v.type === 'Trailer').at(-1) ?? videos.at(-1);
 
-	$: keyCrew = buildKeyCrew(creators, crew);
 
-	$: externalLinks = [
-		showData?.external_ids?.imdb_id && {
-			label: 'IMDb',
-			url: `https://www.imdb.com/title/${showData.external_ids.imdb_id}`,
-			icon: 'simple-icons:imdb',
-		},
-		showData?.external_ids?.tvdb_id && {
-			label: 'TheTVDB',
-			url: `https://thetvdb.com/series/${showData.external_ids.tvdb_id}`,
-			icon: 'simple-icons:thetvdb',
-		},
-		showData?.external_ids?.wikidata_id && {
-			label: 'Wikidata',
-			url: `https://www.wikidata.org/wiki/${showData.external_ids.wikidata_id}`,
-			icon: 'simple-icons:wikidata',
-		},
-		showData?.homepage && {
-			label: 'Official site',
-			url: showData.homepage,
-			icon: 'mdi:web',
-		},
-	].filter(Boolean);
 
-	$: stats = [
-		{
-			label: 'Rating',
-			value: rating ? rating.toFixed(1) : '—',
-			sub: showData?.vote_count
-				? `${showData.vote_count.toLocaleString()} votes`
-				: null,
-		},
-		{ label: 'Seasons', value: showData?.number_of_seasons ?? '—' },
-		{ label: 'Episodes', value: showData?.number_of_episodes ?? '—' },
-		{
-			label: 'Runtime',
-			value: runtime ? `${runtime}m` : '—',
-			sub: 'per episode',
-		},
-		{
-			label: 'Popularity',
-			value: showData?.popularity ? showData.popularity.toFixed(1) : '—',
-		},
-	];
 
 	const splideOptions = {
 		arrows: true,
@@ -207,6 +129,88 @@
 	function onKeydownGlobal(e) {
 		if (e.key === 'Escape' && torrent_modal) torrent_modal = false;
 	}
+	/* ============ Derived ============ */
+	let showData = $derived(data.show);
+	let torrents = $derived(data.torrents ?? []);
+	let mainPoster =
+		$derived(showData?.images?.posters?.find(
+			(p) => p.iso_639_1 === 'en' && p.iso_3166_1 === 'US',
+		) ??
+		showData?.images?.posters?.find((p) => p.iso_639_1 === 'en') ??
+		showData?.images?.posters?.[0]);
+	let posterUrl = $derived(mainPoster?.file_path
+		? `${cfg.image_path}500${mainPoster.file_path}`
+		: showData?.poster_path
+			? `${cfg.image_path}500${showData.poster_path}`
+			: null);
+	let backdropUrl = $derived(showData?.backdrop_path
+		? `${cfg.image_path}1280${showData.backdrop_path}`
+		: null);
+	let network = $derived(showData?.networks?.[0]);
+	let isFollowed = $derived($show.includes(showData?.id));
+	let year = $derived(showData?.first_air_date
+		? dayjs(showData.first_air_date).format('YYYY')
+		: null);
+	let runtime = $derived(showData?.episode_run_time?.[0] ?? null);
+	let rating = $derived(showData?.vote_average);
+	let ratingStyle = $derived(getRatingStyle(rating));
+	let statusStyle = $derived(getStatusStyle(showData?.status));
+	let creators = $derived(showData?.created_by ?? []);
+	let cast = $derived(showData?.credits?.cast ?? []);
+	let crew = $derived(showData?.credits?.crew ?? []);
+	let companies = $derived(showData?.production_companies ?? []);
+	let countries = $derived(showData?.production_countries ?? []);
+	let languages = $derived(showData?.spoken_languages ?? []);
+	let seasons = $derived(showData?.seasons ?? []);
+	let recommendations = $derived(showData?.recommendations?.results ?? []);
+	let videos = $derived((showData?.videos?.results ?? []).filter(
+		(v) => v.site === 'YouTube',
+	));
+	let trailer =
+		$derived(videos.filter((v) => v.type === 'Trailer').at(-1) ?? videos.at(-1));
+	let keyCrew = $derived(buildKeyCrew(creators, crew));
+	let externalLinks = $derived([
+		showData?.external_ids?.imdb_id && {
+			label: 'IMDb',
+			url: `https://www.imdb.com/title/${showData.external_ids.imdb_id}`,
+			icon: 'simple-icons:imdb',
+		},
+		showData?.external_ids?.tvdb_id && {
+			label: 'TheTVDB',
+			url: `https://thetvdb.com/series/${showData.external_ids.tvdb_id}`,
+			icon: 'simple-icons:thetvdb',
+		},
+		showData?.external_ids?.wikidata_id && {
+			label: 'Wikidata',
+			url: `https://www.wikidata.org/wiki/${showData.external_ids.wikidata_id}`,
+			icon: 'simple-icons:wikidata',
+		},
+		showData?.homepage && {
+			label: 'Official site',
+			url: showData.homepage,
+			icon: 'mdi:web',
+		},
+	].filter(Boolean));
+	let stats = $derived([
+		{
+			label: 'Rating',
+			value: rating ? rating.toFixed(1) : '—',
+			sub: showData?.vote_count
+				? `${showData.vote_count.toLocaleString()} votes`
+				: null,
+		},
+		{ label: 'Seasons', value: showData?.number_of_seasons ?? '—' },
+		{ label: 'Episodes', value: showData?.number_of_episodes ?? '—' },
+		{
+			label: 'Runtime',
+			value: runtime ? `${runtime}m` : '—',
+			sub: 'per episode',
+		},
+		{
+			label: 'Popularity',
+			value: showData?.popularity ? showData.popularity.toFixed(1) : '—',
+		},
+	]);
 </script>
 
 <svelte:head>
@@ -221,7 +225,7 @@
 	{/if}
 </svelte:head>
 
-<svelte:window on:keydown={onKeydownGlobal} />
+<svelte:window onkeydown={onKeydownGlobal} />
 
 <div class="min-h-screen bg-zinc-950 text-zinc-100">
 	<!-- ============ HERO ============ -->
@@ -389,7 +393,7 @@
 						{#if data.session}
 							<button
 								type="button"
-								on:click={handleToggle}
+								onclick={handleToggle}
 								class="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
 								       transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60
 								       {isFollowed
@@ -438,7 +442,7 @@
 						{#if torrents.length > 0}
 							<button
 								type="button"
-								on:click={() => (torrent_modal = true)}
+								onclick={() => (torrent_modal = true)}
 								class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5
 								       text-sm font-medium text-zinc-200 transition-colors hover:border-white/20 hover:bg-white/10
 								       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
@@ -1029,7 +1033,7 @@
 	>
 		<button
 			type="button"
-			on:click={() => (torrent_modal = false)}
+			onclick={() => (torrent_modal = false)}
 			aria-label="Close"
 			class="absolute inset-0 bg-black/70 backdrop-blur-sm"
 		></button>
@@ -1054,7 +1058,7 @@
 				</h2>
 				<button
 					type="button"
-					on:click={() => (torrent_modal = false)}
+					onclick={() => (torrent_modal = false)}
 					aria-label="Close"
 					class="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
 				>
@@ -1068,8 +1072,8 @@
 						<div
 							role="button"
 							tabindex="0"
-							on:click={() => copyMagnet(t.magnet_url)}
-							on:keydown={(e) => onTorrentKey(e, t.magnet_url)}
+							onclick={() => copyMagnet(t.magnet_url)}
+							onkeydown={(e) => onTorrentKey(e, t.magnet_url)}
 							title="Click to copy magnet link"
 							class="group flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/5 bg-zinc-800/40 px-3 py-2 text-xs transition-colors hover:border-sky-500/30 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
 						>
@@ -1119,7 +1123,7 @@
 									rel="noreferrer"
 									aria-label="Download .torrent"
 									title="Download .torrent"
-									on:click|stopPropagation
+									onclick={stopPropagation(bubble('click'))}
 									class="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
 								>
 									<Icon
@@ -1131,7 +1135,7 @@
 									href={t.magnet_url}
 									aria-label="Open magnet link"
 									title="Open magnet link"
-									on:click|stopPropagation
+									onclick={stopPropagation(bubble('click'))}
 									class="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
 								>
 									<Icon icon="mdi:magnet" class="h-4 w-4" />

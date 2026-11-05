@@ -11,12 +11,13 @@
 	import cfg from '$config/main';
 	import { show_add, show_del } from '$lib/shows.js';
 
-	export let data;
+	/** @type {{data: any}} */
+	let { data } = $props();
 
-	let query = $page.params.slug ?? '';
-	let results = [];
-	let loading = false;
-	let error = null;
+	let query = $state($page.params.slug ?? '');
+	let results = $state([]);
+	let loading = $state(false);
+	let error = $state(null);
 	let controller = null;
 	let debounceTimer = null;
 
@@ -126,7 +127,7 @@
 	<div
 		class="sticky top-0 z-40 -mx-5 mb-6 bg-zinc-950/80 px-5 py-3 backdrop-blur-xl sm:-mx-10 sm:px-10"
 	>
-		<form on:submit={handleSubmit} class="mx-auto w-full max-w-2xl">
+		<form onsubmit={handleSubmit} class="mx-auto w-full max-w-2xl">
 			<label for="search" class="sr-only">Search TV shows</label>
 			<div class="group relative">
 				<Icon
@@ -138,7 +139,7 @@
 					id="search"
 					type="search"
 					value={query}
-					on:input={(e) => handleInput(e.currentTarget.value)}
+					oninput={(e) => handleInput(e.currentTarget.value)}
 					placeholder="Search TV shows…"
 					autocomplete="off"
 					spellcheck="false"
@@ -162,7 +163,7 @@
 					{:else if query}
 						<button
 							type="button"
-							on:click={clearSearch}
+							onclick={clearSearch}
 							aria-label="Clear search"
 							class="flex h-8 w-8 items-center justify-center rounded-full text-zinc-500
 							       transition-colors hover:bg-white/5 hover:text-zinc-200
@@ -194,7 +195,7 @@
 				<span>Search failed. Please try again.</span>
 				<button
 					class="font-medium underline underline-offset-2 transition hover:text-red-200"
-					on:click={() => runSearch(query)}
+					onclick={() => runSearch(query)}
 				>
 					Retry
 				</button>

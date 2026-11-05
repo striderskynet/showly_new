@@ -17,11 +17,12 @@
 
 	dayjs.extend(relativeTime);
 
-	export let data;
+	/** @type {{data: any}} */
+	let { data } = $props();
 
-	let loading = true;
-	let error = null;
-	let show_list = [];
+	let loading = $state(true);
+	let error = $state(null);
+	let show_list = $state([]);
 
 	const compare = (a, b) => a.day_diff - b.day_diff;
 
@@ -111,8 +112,8 @@
 		await loadShows();
 	});
 
-	$: upcoming_list = data.upcoming_list;
-	$: trending_list = data.trending_list;
+	let upcoming_list = $derived(data.upcoming_list);
+	let trending_list = $derived(data.trending_list);
 </script>
 
 <div class="flex min-h-screen flex-col gap-6 px-5 py-6 sm:px-10">
@@ -135,7 +136,7 @@
 				<span>We couldn't load your shows.</span>
 				<button
 					class="font-medium underline underline-offset-2 transition hover:text-red-200"
-					on:click={loadShows}
+					onclick={loadShows}
 				>
 					Try again
 				</button>

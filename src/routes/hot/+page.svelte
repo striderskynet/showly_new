@@ -8,12 +8,13 @@
 	import { onMount } from 'svelte';
 	import IntersectionObserver from '../../hooks/IntersectionObserver.svelte';
 
-	export let data;
+	/** @type {{data: any}} */
+	let { data } = $props();
 
-	let upcoming_list = [],
+	let upcoming_list = $state([]),
 		current_page = 1,
 		total_pages = 10,
-		loading = true;
+		loading = $state(true);
 
 	const reload_list = async () => {
 		loading = true;
@@ -70,11 +71,13 @@
 				<DefaultCard {el} {data} {add_show} {delete_show} />
 			{/each}
 
-			<IntersectionObserver let:intersecting>
-				{#if intersecting}f
-					{void reload_list() || ''}
-				{/if}
-			</IntersectionObserver>
+			<IntersectionObserver >
+				{#snippet children({ intersecting })}
+								{#if intersecting}f
+						{void reload_list() || ''}
+					{/if}
+											{/snippet}
+						</IntersectionObserver>
 		{/if}
 	</div>
 </div>

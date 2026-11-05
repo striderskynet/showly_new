@@ -2,10 +2,11 @@
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
 
-	export let items = [];
+	/** @type {{items?: any}} */
+	let { items = [] } = $props();
 
-	$: pathname = $page.url.pathname;
-	$: isActive = (url) => pathname === url || pathname.startsWith(url + '/');
+	let pathname = $derived($page.url.pathname);
+	let isActive = $derived((url) => pathname === url || pathname.startsWith(url + '/'));
 </script>
 
 <!-- Wrapper centra la pastilla; pointer-events trick para no bloquear contenido -->

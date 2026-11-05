@@ -11,12 +11,13 @@
 
 	import dayjs from 'dayjs';
 
-	export let data;
+	/** @type {{data: any}} */
+	let { data } = $props();
 
-	let streaming = Promise,
-		stream_loading = true;
+	let streaming = $state(Promise),
+		stream_loading = $state(true);
 
-	let nowPlaying_list, popular_list, upcoming_list;
+	let nowPlaying_list = $derived(data.nowPlaying_list), popular_list = $derived(data.popular_list), upcoming_list = $derived(data.upcoming_list);
 
 	const get_streaming_list = async () => {
 		stream_loading = true;
@@ -92,9 +93,9 @@
 		get_streaming_list();
 	});
 
-	$: nowPlaying_list = data.nowPlaying_list;
-	$: popular_list = data.popular_list;
-	$: upcoming_list = data.upcoming_list;
+	
+	
+	
 
 	//$: console.log(upcoming_list, data.upcoming_list);
 </script>

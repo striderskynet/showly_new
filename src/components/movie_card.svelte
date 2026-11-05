@@ -8,7 +8,8 @@
 
 	//console.log(data);
 	dayjs.extend(relativeTime);
-	export let el;
+	/** @type {{el: any}} */
+	let { el = $bindable() } = $props();
 
 	el.air_date = dayjs(el.release_date);
 

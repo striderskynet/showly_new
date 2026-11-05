@@ -6,7 +6,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 
-	let ordered_shows = [];
+	let ordered_shows = $state([]);
 	onMount(async () => {
 		let val = get(show);
 

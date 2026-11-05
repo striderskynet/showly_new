@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import DefaultCard from '$components/default_card.svelte';
 	import cfg from '$config/main';
 	import { show, show_add, show_del } from '$lib/shows.js';
@@ -16,11 +18,12 @@
 
 	dayjs.extend(relativeTime);
 
-	export let data;
+	/** @type {{data: any}} */
+	let { data } = $props();
 
-	let loading = true;
-	let show_list = [];
-	let loaded_user_id = null;
+	let loading = $state(true);
+	let show_list = $state([]);
+	let loaded_user_id = $state(null);
 
 	function compare(a, b) {
 		if (a.day_diff < b.day_diff) return -1;
@@ -90,7 +93,7 @@
 	};
 
 	// Reacciona a la llegada (o cambio) de la sesión — no depende de onMount
-	$: {
+	run(() => {
 		const userId = data?.session?.user?.id ?? null;
 
 		if (userId && userId !== loaded_user_id) {
@@ -102,17 +105,17 @@
 			show.set([]);
 			loading = false;
 		}
-	}
+	});
 
-	let upcoming_list, trending_list;
+	let upcoming_list = $derived(safePromise(data?.upcoming_list)), trending_list = $derived(safePromise(data?.trending_list));
 
 	const safePromise = (p) =>
 		Promise.resolve(p)
 			.then((v) => v ?? { results: [] })
 			.catch(() => ({ results: [] }));
 
-	$: upcoming_list = safePromise(data?.upcoming_list);
-	$: trending_list = safePromise(data?.trending_list);
+	
+	
 </script>
 
 <div class="flex min-h-screen flex-col p-5">
@@ -137,30 +140,28 @@
 								shows={false}
 							/>
 						{/each}
-						<svelte:fragment
-							slot="controls"
-							let:setIndex
-							let:currentIndex
-						>
-							<button
-								on:click={() => setIndex(currentIndex - 1)}
-								class="absolute top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
-							>
-								<Icon
-									icon="mdi:chevron-left-circle"
-									class="text-5xl"
-								/>
-							</button>
-							<button
-								on:click={() => setIndex(currentIndex + 1)}
-								class="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
-							>
-								<Icon
-									icon="mdi:chevron-right-circle"
-									class="text-5xl"
-								/>
-							</button>
-						</svelte:fragment>
+						{#snippet controls({ setIndex, currentIndex })}
+													
+								<button
+									onclick={() => setIndex(currentIndex - 1)}
+									class="absolute top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
+								>
+									<Icon
+										icon="mdi:chevron-left-circle"
+										class="text-5xl"
+									/>
+								</button>
+								<button
+									onclick={() => setIndex(currentIndex + 1)}
+									class="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
+								>
+									<Icon
+										icon="mdi:chevron-right-circle"
+										class="text-5xl"
+									/>
+								</button>
+							
+													{/snippet}
 					</TinySlider>
 				{/key}
 			{:else}
@@ -200,23 +201,25 @@
 						/>
 					{/if}
 				{/each}
-				<svelte:fragment slot="controls" let:setIndex let:currentIndex>
-					<button
-						on:click={() => setIndex(currentIndex - 1)}
-						class="absolute top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
-					>
-						<Icon icon="mdi:chevron-left-circle" class="text-5xl" />
-					</button>
-					<button
-						on:click={() => setIndex(currentIndex + 1)}
-						class="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
-					>
-						<Icon
-							icon="mdi:chevron-right-circle"
-							class="text-5xl"
-						/>
-					</button>
-				</svelte:fragment>
+				{#snippet controls({ setIndex, currentIndex })}
+							
+						<button
+							onclick={() => setIndex(currentIndex - 1)}
+							class="absolute top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
+						>
+							<Icon icon="mdi:chevron-left-circle" class="text-5xl" />
+						</button>
+						<button
+							onclick={() => setIndex(currentIndex + 1)}
+							class="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
+						>
+							<Icon
+								icon="mdi:chevron-right-circle"
+								class="text-5xl"
+							/>
+						</button>
+					
+							{/snippet}
 			</TinySlider>
 		{/await}
 	</div>
@@ -250,23 +253,25 @@
 					{/if}
 				{/each}
 
-				<svelte:fragment slot="controls" let:setIndex let:currentIndex>
-					<button
-						on:click={() => setIndex(currentIndex - 1)}
-						class="absolute top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
-					>
-						<Icon icon="mdi:chevron-left-circle" class="text-5xl" />
-					</button>
-					<button
-						on:click={() => setIndex(currentIndex + 1)}
-						class="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
-					>
-						<Icon
-							icon="mdi:chevron-right-circle"
-							class="text-5xl"
-						/>
-					</button>
-				</svelte:fragment>
+				{#snippet controls({ setIndex, currentIndex })}
+							
+						<button
+							onclick={() => setIndex(currentIndex - 1)}
+							class="absolute top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
+						>
+							<Icon icon="mdi:chevron-left-circle" class="text-5xl" />
+						</button>
+						<button
+							onclick={() => setIndex(currentIndex + 1)}
+							class="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 duration-300 hover:opacity-100"
+						>
+							<Icon
+								icon="mdi:chevron-right-circle"
+								class="text-5xl"
+							/>
+						</button>
+					
+							{/snippet}
 			</TinySlider>
 		{/await}
 	</div>

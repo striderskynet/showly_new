@@ -5,7 +5,8 @@
 	import { onMount } from 'svelte';
 	import MenuLeft from './../components/UI/menu_left.svelte';
 	import TopNavigation from './../components/UI/top_navigation.svelte';
-	export let data;
+	/** @type {{data: any, children?: import('svelte').Snippet}} */
+	let { data, children } = $props();
 
 	onMount(() => {
 		// posthog.init('phc_q48EhR7TH2EIKrHDjsm1RjXa0Y7Gl6Pv90ETCN7ET3Z', {
@@ -16,18 +17,20 @@
 	// console.log(data);
 </script>
 
-<svelteL:head>
+<svelte:head>
 	<title>Showly</title>
-</svelteL:head>
+</svelte:head>
 
 {#if $page.route.id == '/truper'}
-	<slot />
+	{@render children?.()}
 {:else}
 	<div class="relative flex w-screen h-screen overflow-x-hidden bg-black">
 		<MenuLeft {data} />
 
 		<TopNavigation {data} />
 
-		<div class="w-full text-white sm:pl-16 sm:pt-0"><slot /></div>
+		<div class="w-full text-white sm:pl-16 sm:pt-0">
+			{@render children?.()}
+		</div>
 	</div>
 {/if}

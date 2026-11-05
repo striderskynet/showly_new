@@ -1,27 +1,35 @@
 import {
     PUBLIC_SUPABASE_ANON_KEY,
     PUBLIC_SUPABASE_URL,
-} from "$env/static/public";
-import { createSupabaseServerClient } from '@supabase/auth-helpers-sveltekit';
+} from '$env/static/public';
+import { createServerClient } from '@supabase/ssr';
 
 export const handle = async ({ event, resolve }) => {
-    event.locals.supabase = createSupabaseServerClient({
-        supabaseUrl: PUBLIC_SUPABASE_URL,
-        supabaseKey: PUBLIC_SUPABASE_ANON_KEY,
-        event,
-    })
+    event.locals.supabase = createServerClient(
+        PUBLIC_SUPABASE_URL,
+        PUBLIC_SUPABASE_ANON_KEY,
+        {
+            cookies: {
+                getAll: () => event.cookies.getAll(),
+                setAll: (cookiesToSet) => {
+                    cookiesToSet.forEach(({ name, value, options }) => {
+                        event.cookies.set(name, value, { ...options, path: '/' });
+                    });
+                },
+            },
+        }
+    );
+
     event.locals.getSession = async () => {
         const {
             data: { session },
-        } = await event.locals.supabase.auth.getSession()
-        return session
-    }
+        } = await event.locals.supabase.auth.getSession();
+        return session;
+    };
+
     return resolve(event, {
         filterSerializedResponseHeaders(name) {
-            return name === 'content-range'
+            return name === 'content-range';
         },
-    })
-
-    // const response = await resolve(event);
-    // return response;
-}
+    });
+};

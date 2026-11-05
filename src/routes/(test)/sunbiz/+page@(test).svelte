@@ -1,9 +1,9 @@
 <script>
 	import parse from 'node-html-parser';
 
-	let loading = true,
-		timer;
-	let response = [];
+	let loading = $state(true),
+		timer = $state();
+	let response = $state([]);
 
 	const analize_data = async (data) => {
 		let items = data.querySelectorAll(
@@ -41,7 +41,7 @@
 
 <div class="flex h-full w-full flex-col items-center justify-center gap-5">
 	<input
-		on:input={(e) => {
+		oninput={(e) => {
 			let val = e.target.value;
 			//if (val.length <= 2) return false;
 

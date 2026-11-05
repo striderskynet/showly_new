@@ -1,14 +1,18 @@
 <script>
 	import { onMount } from 'svelte';
 
-	export let once = false;
-	export let top = 0;
-	export let bottom = 0;
-	export let left = 0;
-	export let right = 0;
+	/** @type {{once?: boolean, top?: number, bottom?: number, left?: number, right?: number, children?: import('svelte').Snippet<[any]>}} */
+	let {
+		once = false,
+		top = 0,
+		bottom = 0,
+		left = 0,
+		right = 0,
+		children
+	} = $props();
 
-	let intersecting = false;
-	let container;
+	let intersecting = $state(false);
+	let container = $state();
 
 	onMount(() => {
 		if (typeof IntersectionObserver !== 'undefined') {
@@ -49,5 +53,5 @@
 </script>
 
 <div class="w-[100%]" bind:this={container}>
-	<slot {intersecting} />
+	{@render children?.({ intersecting, })}
 </div>

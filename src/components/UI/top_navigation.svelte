@@ -1,11 +1,14 @@
 <script>
+	import { preventDefault } from 'svelte/legacy';
+
 	import Icon from '@iconify/svelte';
 	import { Drawer } from 'flowbite-svelte';
 	import { sineIn } from 'svelte/easing';
 
-	export let data;
+	/** @type {{data: any}} */
+	let { data } = $props();
 
-	let hidden = true;
+	let hidden = $state(true);
 	let transitionParamsRight = {
 		x: 320,
 		duration: 200,
@@ -25,9 +28,9 @@
 	{#if data.session}
 		<a
 			href={'#'}
-			on:click|preventDefault={() => {
+			onclick={preventDefault(() => {
 				hidden = false;
-			}}
+			})}
 			class="relative bg-transparent p-1 rounded-full hover:bg-gray-700 hover:text-white flex items-center gap-2 duration-300 w-10 aspect-square overflow-hidden text-sky-500 border border-sky-700"
 		>
 			<img
@@ -39,9 +42,9 @@
 	{:else}
 		<a
 			href="/login"
-			on:click|preventDefault={() => {
+			onclick={preventDefault(() => {
 				hidden = false;
-			}}
+			})}
 			class="relative bg-gray-800 p-1 rounded-full hover:bg-gray-700 text-sky-500 hover:text-white flex items-center gap-2 duration-300 w-10 aspect-square overflow-hidden"
 		>
 			<Icon icon="mdi:user" class="w-8 text-2xl" />
@@ -68,7 +71,7 @@
 			{data.session ? data.session.user.email : ''}
 		</h5>
 
-		<button on:click={() => (hidden = true)}>
+		<button onclick={() => (hidden = true)}>
 			<Icon icon="mdi:close" class="text-2xl -mt-5" />
 		</button>
 	</div>
