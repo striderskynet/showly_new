@@ -20,105 +20,152 @@
 	export let data;
 
 	let loading = true;
+	let error = null;
 	let show_list = [];
 
 	const compare = (a, b) => a.day_diff - b.day_diff;
 
-	const add_show = (id, show_item) => {
-		show_add(data.supabase, data.session.user.id, id);
-		show_list = [show_item, ...show_list].sort(compare);
-	};
+	/** Añade `day_diff` / `day_diff_title` usados para ordenar y mostrar. */
+	function enrichShow(res) {
+		const next = res?.next_episode_to_air;
+		const nextDate = next?.air_date
+			? dayjs(next.air_date, 'YYYY-MM-DD')
+			: null;
 
-	const delete_show = (id) => {
-		show_del(data.supabase, data.session.user.id, id);
-		show_list = show_list.filter((o) => o.id !== id);
-	};
+		return {
+			...res,
+			day_diff: nextDate ? nextDate.diff(dayjs(), 'days') : 10000,
+			day_diff_title: nextDate ? nextDate.fromNow() : undefined,
+		};
+	}
 
-	/** Adds `day_diff` / `day_diff_title` used for sorting + display. */
-	const enrichShow = (res) => {
-		res.day_diff = 10000;
+	async function fetchShow(id) {
+		const res = await fetch(`${cfg.api_show_id}${id}`, cfg.api_options);
+		if (!res.ok) throw new Error(`Failed to fetch show ${id}`);
+		return enrichShow(await res.json());
+	}
 
-		if (res.next_episode_to_air) {
-			const next = dayjs(res.next_episode_to_air.air_date, 'YYYY-MM-DD');
-			res.day_diff = next.diff(dayjs(), 'days');
-			res.day_diff_title = next.fromNow();
-		}
-
-		return res;
-	};
-
-	const load_shows = async () => {
+	async function loadShows() {
 		loading = true;
+		error = null;
 
-		const ids = get(show);
-		const results = await Promise.all(
-			ids.map((id) =>
-				fetch(cfg.api_show_id + id, cfg.api_options)
-					.then((res) => res.json())
-					.then(enrichShow)
-			)
-		);
+		try {
+			const ids = get(show) ?? [];
+			const results = await Promise.allSettled(ids.map(fetchShow));
 
-		show_list = results.sort(compare);
-		loading = false;
-	};
+			show_list = results
+				.filter((r) => r.status === 'fulfilled')
+				.map((r) => r.value)
+				.sort(compare);
+		} catch (e) {
+			error = e;
+		} finally {
+			loading = false;
+		}
+	}
+
+	// Update optimista + rollback si falla la BD.
+	async function add_show(id, show_item) {
+		const enriched = enrichShow(show_item);
+		show_list = [enriched, ...show_list].sort(compare);
+
+		try {
+			await show_add(data.supabase, data.session.user.id, id);
+		} catch (e) {
+			console.error('add_show failed', e);
+			show_list = show_list.filter((s) => s.id !== id);
+		}
+	}
+
+	async function delete_show(id) {
+		const previous = show_list;
+		show_list = show_list.filter((s) => s.id !== id);
+
+		try {
+			await show_del(data.supabase, data.session.user.id, id);
+		} catch (e) {
+			console.error('delete_show failed', e);
+			show_list = previous;
+		}
+	}
 
 	onMount(async () => {
-		if (data.session) {
-			const { data: list_of_shows } = await data.supabase
-				.from('shows_following')
-				.select()
-				.eq('user_id', data.session.user.id)
-				.order('id', { ascending: true });
-
-			show.set(list_of_shows.map((e) => e.show));
+		if (!data.session) {
+			loading = false;
+			return;
 		}
 
-		load_shows();
+		const { data: list_of_shows, error: dbError } = await data.supabase
+			.from('shows_following')
+			.select()
+			.eq('user_id', data.session.user.id)
+			.order('id', { ascending: true });
+
+		if (dbError) {
+			error = dbError;
+			loading = false;
+			return;
+		}
+
+		show.set(list_of_shows.map((e) => e.show));
+		await loadShows();
 	});
 
 	$: upcoming_list = data.upcoming_list;
 	$: trending_list = data.trending_list;
 </script>
 
-<div class="flex min-h-screen flex-col p-5">
-	<div
-		class="relative mt-10 flex flex-wrap justify-center gap-3 sm:mt-0 sm:justify-start"
-	>
-		{#if data.session}
-			{#key show_list}
-				{#if !loading && show_list.length > 0}
-					<ShowSlider
-						list={show_list}
-						{data}
-						{add_show}
-						{delete_show}
-					/>
-				{:else}
-					<EmptyShows />
-				{/if}
-			{/key}
-		{:else}
+<div class="flex min-h-screen flex-col gap-6 px-5 py-6 sm:px-10">
+	<!-- Mis series -->
+	<section>
+		<header class="mb-3 flex items-center justify-between">
+			<h2 class="text-lg font-semibold text-slate-200">My Shows</h2>
+		</header>
+
+		{#if !data.session}
 			<NotLogged />
+		{:else if loading}
+			<div class="flex w-full justify-center py-12">
+				<Spinner />
+			</div>
+		{:else if error}
+			<div
+				class="flex flex-col items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-300"
+			>
+				<span>We couldn't load your shows.</span>
+				<button
+					class="font-medium underline underline-offset-2 transition hover:text-red-200"
+					on:click={loadShows}
+				>
+					Try again
+				</button>
+			</div>
+		{:else if show_list.length === 0}
+			<EmptyShows />
+		{:else}
+			<ShowSlider list={show_list} {data} {add_show} {delete_show} />
 		{/if}
-	</div>
+	</section>
 
-	<div class="relative mt-5 sm:mt-5">
+	<!-- Próximos -->
+	<section>
+		<header
+			class="mb-3 flex items-center justify-between px-2 text-slate-400"
+		>
+			<h2 class="text-base font-medium">Upcoming</h2>
+			<a
+				href="/hot"
+				class="z-10 flex items-center gap-1 transition hover:text-white"
+			>
+				More <Icon icon="mdi:chevron-right" class="text-2xl" />
+			</a>
+		</header>
+
 		{#await upcoming_list}
-			<div class="flex w-full flex-1 items-center justify-center">
+			<div class="flex w-full justify-center py-12">
 				<Spinner />
 			</div>
 		{:then list}
-			<div class="mb-2 flex w-full justify-between px-10 text-slate-500">
-				<span>Upcoming</span>
-				<a
-					href="/hot"
-					class="z-10 flex items-center gap-1 duration-300 hover:text-white"
-				>
-					More <Icon icon="mdi:chevron-right" class="text-2xl" />
-				</a>
-			</div>
-
 			<ShowSlider
 				list={list.results}
 				{data}
@@ -126,25 +173,34 @@
 				{delete_show}
 				filterFollowed
 			/>
+		{:catch}
+			<div
+				class="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-sm text-slate-400"
+			>
+				Couldn't load upcoming shows.
+			</div>
 		{/await}
-	</div>
+	</section>
 
-	<div class="relative mb-20 sm:mt-5">
+	<!-- Tendencias -->
+	<section class="mb-16">
+		<header
+			class="mb-3 flex items-center justify-between px-2 text-slate-400"
+		>
+			<h2 class="text-base font-medium">Trending</h2>
+			<a
+				href="/trending"
+				class="z-10 flex items-center gap-1 transition hover:text-white"
+			>
+				More <Icon icon="mdi:chevron-right" class="text-2xl" />
+			</a>
+		</header>
+
 		{#await trending_list}
-			<div class="flex w-full flex-1 items-center justify-center">
+			<div class="flex w-full justify-center py-12">
 				<Spinner />
 			</div>
 		{:then list}
-			<div class="flex w-full justify-between px-10 text-slate-500">
-				<span>Trending</span>
-				<a
-					href="/trending"
-					class="z-10 flex items-center gap-1 duration-300 hover:text-white"
-				>
-					More <Icon icon="mdi:chevron-right" class="text-2xl" />
-				</a>
-			</div>
-
 			<ShowSlider
 				list={list.results}
 				{data}
@@ -152,6 +208,12 @@
 				{delete_show}
 				filterFollowed
 			/>
+		{:catch}
+			<div
+				class="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-sm text-slate-400"
+			>
+				Couldn't load trending shows.
+			</div>
 		{/await}
-	</div>
+	</section>
 </div>

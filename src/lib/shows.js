@@ -1,82 +1,55 @@
 import { get, writable } from "svelte/store";
+
 export const show = writable([]);
 
-export const show_toggle = async (db, user_id, show_id, favourite = false) => {
+/** Añade una serie: update optimista + rollback si la BD falla. */
+export async function show_add(db, user_id, show_id, favourite = false) {
+    const previous = get(show);
+    if (previous.includes(show_id)) return; // dedupe
 
-    const { count, error_list } = await db.from('shows_following').select('*', { count: 'exact', head: true }).eq('user_id', user_id).eq('show', show_id)
-
-    if (count > 0) {  // Remove show
-
-        console.log("Removing show from database", show_id)
-
-        const { error } = await db
-            .from('shows_following')
-            .delete()
-            .eq('user_id', user_id).eq('show', show_id)
-
-        if (error) console.log(error)
-
-        console.log("this", last_show, show)
-        //delete show[show_id]
-    } else { // Add Show
-
-        let new_show = {
-            user_id: user_id, show: show_id, favorite: favourite
-        }
-        console.log("Adding show to database", new_show)
-
-        let last_show;
-        show.subscribe((val) => { last_show = val })
-        last_show = [show_id, ...last_show];
-        show.set(last_show);
-
-        const { error } = await db.from('shows_following').insert(new_show);
-
-        if (error) console.log(error)
-
-    }
-
-    console.log(show)
-}
-
-export const show_del = async (db, user_id, show_id, favourite = false) => {
-
-    let last_show = get(show);
-    last_show = last_show.filter(o => o !== show_id);
-    show.set(last_show);
-
-    console.log("Removing show from database", show_id)
+    show.set([show_id, ...previous]);
 
     const { error } = await db
-        .from('shows_following')
-        .delete()
-        .eq('user_id', user_id).eq('show', show_id)
+        .from("shows_following")
+        .insert({ user_id, show: show_id, favorite: favourite });
 
-    if (error) console.log(error)
-
-    // let new_show = {
-    //     user_id: user_id, show: show_id, favorite: favourite
-    // }
-    // console.log("Adding show to database", new_show)
-
-    // const { error } = await db.from('shows_following').insert(new_show);
-
-    if (error) console.log(error)
+    if (error) {
+        show.set(previous); // rollback
+        throw error;
+    }
 }
 
+/** Quita una serie: update optimista + rollback si la BD falla. */
+export async function show_del(db, user_id, show_id) {
+    const previous = get(show);
 
-export const show_add = async (db, user_id, show_id, favourite = false) => {
-    let new_show = {
-        user_id: user_id, show: show_id, favorite: favourite
+    show.set(previous.filter((id) => id !== show_id));
+
+    const { error } = await db
+        .from("shows_following")
+        .delete()
+        .eq("user_id", user_id)
+        .eq("show", show_id);
+
+    if (error) {
+        show.set(previous); // rollback
+        throw error;
     }
-    console.log("Adding show to database", new_show)
+}
 
-    let last_show = get(show);
-    last_show = [...last_show, show_id]
-    show.set(last_show);
+/** Alterna el estado de seguimiento. */
+export async function show_toggle(db, user_id, show_id, favourite = false) {
+    const { count, error } = await db
+        .from("shows_following")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user_id)
+        .eq("show", show_id);
 
-    const { error } = await db.from('shows_following').insert(new_show);
+    if (error) throw error;
 
-    if (error) console.log(error)
-
+    if (count > 0) {
+        await show_del(db, user_id, show_id);
+    } else {
+        await show_add(db, user_id, show_id, favourite);
+    }
 }

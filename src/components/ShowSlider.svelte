@@ -16,19 +16,23 @@
 		: list;
 </script>
 
-<TinySlider gap="4px">
-	{#each visible as el}
-		<DefaultCard
-			{el}
-			{data}
-			{add_show}
-			{delete_show}
-			defaultClass="flex aspect-[1/1.5]"
-			shows={false}
-		/>
-	{/each}
+{#if visible.length > 0}
+	{#key visible}
+		<TinySlider gap="10px">
+			{#each visible as el (el.id)}
+				<DefaultCard
+					{el}
+					{data}
+					{add_show}
+					{delete_show}
+					defaultClass="flex aspect-[1/1.5]"
+					shows={false}
+				/>
+			{/each}
 
-	<svelte:fragment slot="controls" let:setIndex let:currentIndex>
-		<SliderControls {setIndex} {currentIndex} />
-	</svelte:fragment>
-</TinySlider>
+			<svelte:fragment slot="controls" let:setIndex let:currentIndex>
+				<SliderControls {setIndex} {currentIndex} />
+			</svelte:fragment>
+		</TinySlider>
+	{/key}
+{/if}

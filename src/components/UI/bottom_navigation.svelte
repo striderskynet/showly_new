@@ -2,37 +2,45 @@
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
 
-	export let items;
+	export let items = [];
+
+	$: pathname = $page.url.pathname;
+	$: isActive = (url) => pathname === url || pathname.startsWith(url + '/');
 </script>
 
-<div class="flex sm:hidden fixed w-screen bottom-0 justify-center z-50">
-	<div
-		class="w-full flex justify-evenly border-0 pb-2 items-center px-2 bg-black text-gray-300 border-t-2 border-t-gray-500"
+<!-- Wrapper centra la pastilla; pointer-events trick para no bloquear contenido -->
+<div
+	class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 sm:hidden"
+>
+	<nav
+		class="pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto
+		       rounded-full border border-zinc-800/60 bg-zinc-900/80 p-1.5
+		       shadow-2xl shadow-black/60 backdrop-blur-xl
+		       [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+		aria-label="Mobile navigation"
 	>
-		<a href={'/'} class="p-1 rounded-lg duration-300 relative flex w-12">
-			<img
-				src="/favicon.png"
-				alt="Admin Logo"
-				class="opacity-100 group-hover:opacity-0 duration-300 w-12 aspect-square rounded absolute -top-5"
-			/>
-		</a>
-		{#each items as s, i}
-			{@const is_active = $page.url.pathname === s.url}
-
-			<div
-				class="border-t-4 border-t-transparent flex duration-300"
-				class:active={is_active}
+		{#each items as item}
+			{@const active = isActive(item.url)}
+			<a
+				href={item.url}
+				aria-current={active ? 'page' : undefined}
+				class="flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2
+				       text-sm font-medium transition-all duration-300
+				       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60
+				       {active
+					? 'bg-sky-500/15 text-sky-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+					: 'text-zinc-400 hover:bg-white/5 hover:text-zinc-200'}"
 			>
-				<a href={s.url} class="p-1 rounded-lg duration-300">
-					<Icon icon={s.icon} class="text-3xl" />
-				</a>
-			</div>
+				<Icon
+					icon={item.icon}
+					class="h-5 w-5 shrink-0 {active
+						? 'drop-shadow-[0_0_6px_rgba(56,189,248,0.5)]'
+						: ''}"
+				/>
+				{#if active}
+					<span class="text-xs font-semibold">{item.label}</span>
+				{/if}
+			</a>
 		{/each}
-	</div>
+	</nav>
 </div>
-
-<style type="postcss">
-	.active {
-		@apply border-t-red-500;
-	}
-</style>
