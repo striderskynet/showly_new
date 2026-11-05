@@ -1,1 +1,0 @@
-import"./Bzak7iHL.js";import"./DdeOw0Rr.js";import{a as v,f as t}from"./_dQij4HL.js";var c=t('<div class="lds-ellipsis svelte-tkc8yc"><div class="svelte-tkc8yc"></div> <div class="svelte-tkc8yc"></div> <div class="svelte-tkc8yc"></div> <div class="svelte-tkc8yc"></div></div>');function a(s){var i=c();v(s,i)}export{a as S};
