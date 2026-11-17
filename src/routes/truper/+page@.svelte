@@ -47,9 +47,22 @@
 		return alias;
 	};
 
+	// ── Deduplicación por código (JSON trae duplicados: p.ej. 17942) ────
+	const dedupeByCode = (list) => {
+		const seen = new Set();
+		const result = [];
+		for (const item of list) {
+			if (!item || typeof item.code !== 'string') continue;
+			if (seen.has(item.code)) continue;
+			seen.add(item.code);
+			result.push(item);
+		}
+		return result;
+	};
+
 	// ── Derivaciones estáticas ──────────────────────────────────────────
 	const familyAlias = buildFamilyAlias(catalog);
-	const products = catalog.map((p) => ({
+	const products = dedupeByCode(catalog).map((p) => ({
 		...p,
 		_family: familyAlias.get(p.family) ?? p.family,
 	}));
@@ -151,17 +164,24 @@
 		return pairs;
 	};
 
-	const rehydrateLines = (lines) =>
-		lines.flatMap((line) => {
-			if (!line || typeof line.code !== 'string') return [];
+	// Fusiona duplicados por `code` para no violar la keyed each del carrito.
+	const rehydrateLines = (lines) => {
+		const merged = new Map();
+		for (const line of lines) {
+			if (!line || typeof line.code !== 'string') continue;
 			const quantity = Number(line.quantity);
-			if (!Number.isFinite(quantity) || quantity <= 0) return [];
+			if (!Number.isFinite(quantity) || quantity <= 0) continue;
 			const product = productByCode.get(line.code);
-			if (!product || product.amount <= 0) return [];
-			return [
-				{ ...product, quantity: Math.min(quantity, product.amount) },
-			];
-		});
+			if (!product || product.amount <= 0) continue;
+			const previous = merged.get(line.code)?.quantity ?? 0;
+			const total = previous + quantity;
+			merged.set(line.code, {
+				...product,
+				quantity: Math.min(total, product.amount),
+			});
+		}
+		return [...merged.values()];
+	};
 
 	const buildUrl = (query, families, lines) => {
 		const params = new URLSearchParams();
@@ -181,9 +201,12 @@
 		const current = `${location.pathname}${location.search}${location.hash}`;
 		if (url === current) return;
 
+		// IMPORTANTE: `activeFamilies` es un Proxy de $state. Hay que
+		// pasarlo como array plano o history.replaceState lanza
+		// DataCloneError (structured clone no clona Proxies).
 		const state = {
 			q: activeQuery,
-			fam: activeFamilies,
+			fam: [...activeFamilies],
 			b: serializeBasket(basket),
 		};
 		if (push) history.pushState(state, '', url);
@@ -358,8 +381,11 @@
 		activeFamilies = fam;
 
 		persistBasket();
+
+		// `fam` ya viene como array plano de readUrl(); se copia igual
+		// para no pasar nunca un Proxy a structured clone.
 		history.replaceState(
-			{ q, fam, b: serializeBasket(basket) },
+			{ q, fam: [...fam], b: serializeBasket(basket) },
 			'',
 			buildUrl(q, fam, basket),
 		);

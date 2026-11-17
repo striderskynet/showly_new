@@ -1,16 +1,13 @@
 <script>
-	import { createBubbler, stopPropagation } from 'svelte/legacy';
-
-	const bubble = createBubbler();
 	import { dev } from '$app/environment';
 	import cfg from '$config/main';
-	import { humanFileSize } from '$lib/index.js';
 	import { show, show_toggle } from '$lib/shows';
 	import Icon from '@iconify/svelte';
 	import { Splide, SplideSlide } from '@splidejs/svelte-splide';
 	import '@splidejs/svelte-splide/css';
 	import dayjs from 'dayjs';
 	import relativeTime from 'dayjs/plugin/relativeTime';
+	import TorrentModal from './TorrentModal.svelte';
 
 	dayjs.extend(relativeTime);
 
@@ -18,14 +15,6 @@
 	let { data } = $props();
 
 	let torrent_modal = $state(false);
-
-
-
-
-
-
-
-
 
 	const splideOptions = {
 		arrows: true,
@@ -111,46 +100,35 @@
 		}
 	}
 
-	async function copyMagnet(url) {
-		try {
-			await navigator.clipboard.writeText(url);
-		} catch {
-			/* clipboard bloqueado */
-		}
-	}
-
-	function onTorrentKey(e, url) {
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			copyMagnet(url);
-		}
-	}
-
-	function onKeydownGlobal(e) {
-		if (e.key === 'Escape' && torrent_modal) torrent_modal = false;
-	}
 	/* ============ Derived ============ */
 	let showData = $derived(data.show);
 	let torrents = $derived(data.torrents ?? []);
-	let mainPoster =
-		$derived(showData?.images?.posters?.find(
+	let mainPoster = $derived(
+		showData?.images?.posters?.find(
 			(p) => p.iso_639_1 === 'en' && p.iso_3166_1 === 'US',
 		) ??
-		showData?.images?.posters?.find((p) => p.iso_639_1 === 'en') ??
-		showData?.images?.posters?.[0]);
-	let posterUrl = $derived(mainPoster?.file_path
-		? `${cfg.image_path}500${mainPoster.file_path}`
-		: showData?.poster_path
-			? `${cfg.image_path}500${showData.poster_path}`
-			: null);
-	let backdropUrl = $derived(showData?.backdrop_path
-		? `${cfg.image_path}1280${showData.backdrop_path}`
-		: null);
+			showData?.images?.posters?.find((p) => p.iso_639_1 === 'en') ??
+			showData?.images?.posters?.[0],
+	);
+	let posterUrl = $derived(
+		mainPoster?.file_path
+			? `${cfg.image_path}500${mainPoster.file_path}`
+			: showData?.poster_path
+				? `${cfg.image_path}500${showData.poster_path}`
+				: null,
+	);
+	let backdropUrl = $derived(
+		showData?.backdrop_path
+			? `${cfg.image_path}1280${showData.backdrop_path}`
+			: null,
+	);
 	let network = $derived(showData?.networks?.[0]);
 	let isFollowed = $derived($show.includes(showData?.id));
-	let year = $derived(showData?.first_air_date
-		? dayjs(showData.first_air_date).format('YYYY')
-		: null);
+	let year = $derived(
+		showData?.first_air_date
+			? dayjs(showData.first_air_date).format('YYYY')
+			: null,
+	);
 	let runtime = $derived(showData?.episode_run_time?.[0] ?? null);
 	let rating = $derived(showData?.vote_average);
 	let ratingStyle = $derived(getRatingStyle(rating));
@@ -163,34 +141,37 @@
 	let languages = $derived(showData?.spoken_languages ?? []);
 	let seasons = $derived(showData?.seasons ?? []);
 	let recommendations = $derived(showData?.recommendations?.results ?? []);
-	let videos = $derived((showData?.videos?.results ?? []).filter(
-		(v) => v.site === 'YouTube',
-	));
-	let trailer =
-		$derived(videos.filter((v) => v.type === 'Trailer').at(-1) ?? videos.at(-1));
+	let videos = $derived(
+		(showData?.videos?.results ?? []).filter((v) => v.site === 'YouTube'),
+	);
+	let trailer = $derived(
+		videos.filter((v) => v.type === 'Trailer').at(-1) ?? videos.at(-1),
+	);
 	let keyCrew = $derived(buildKeyCrew(creators, crew));
-	let externalLinks = $derived([
-		showData?.external_ids?.imdb_id && {
-			label: 'IMDb',
-			url: `https://www.imdb.com/title/${showData.external_ids.imdb_id}`,
-			icon: 'simple-icons:imdb',
-		},
-		showData?.external_ids?.tvdb_id && {
-			label: 'TheTVDB',
-			url: `https://thetvdb.com/series/${showData.external_ids.tvdb_id}`,
-			icon: 'simple-icons:thetvdb',
-		},
-		showData?.external_ids?.wikidata_id && {
-			label: 'Wikidata',
-			url: `https://www.wikidata.org/wiki/${showData.external_ids.wikidata_id}`,
-			icon: 'simple-icons:wikidata',
-		},
-		showData?.homepage && {
-			label: 'Official site',
-			url: showData.homepage,
-			icon: 'mdi:web',
-		},
-	].filter(Boolean));
+	let externalLinks = $derived(
+		[
+			showData?.external_ids?.imdb_id && {
+				label: 'IMDb',
+				url: `https://www.imdb.com/title/${showData.external_ids.imdb_id}`,
+				icon: 'simple-icons:imdb',
+			},
+			showData?.external_ids?.tvdb_id && {
+				label: 'TheTVDB',
+				url: `https://thetvdb.com/series/${showData.external_ids.tvdb_id}`,
+				icon: 'simple-icons:thetvdb',
+			},
+			showData?.external_ids?.wikidata_id && {
+				label: 'Wikidata',
+				url: `https://www.wikidata.org/wiki/${showData.external_ids.wikidata_id}`,
+				icon: 'simple-icons:wikidata',
+			},
+			showData?.homepage && {
+				label: 'Official site',
+				url: showData.homepage,
+				icon: 'mdi:web',
+			},
+		].filter(Boolean),
+	);
 	let stats = $derived([
 		{
 			label: 'Rating',
@@ -224,8 +205,6 @@
 		/>
 	{/if}
 </svelte:head>
-
-<svelte:window onkeydown={onKeydownGlobal} />
 
 <div class="min-h-screen bg-zinc-950 text-zinc-100">
 	<!-- ============ HERO ============ -->
@@ -1023,150 +1002,5 @@
 	</div>
 </div>
 
-<!-- ============ TORRENT MODAL ============ -->
-{#if torrent_modal}
-	<div
-		class="fixed inset-0 z-50 flex items-center justify-center p-4"
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="torrent-title"
-	>
-		<button
-			type="button"
-			onclick={() => (torrent_modal = false)}
-			aria-label="Close"
-			class="absolute inset-0 bg-black/70 backdrop-blur-sm"
-		></button>
-
-		<div
-			class="relative z-10 flex max-h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl shadow-black/80"
-		>
-			<header
-				class="flex items-center justify-between border-b border-white/10 bg-zinc-900/80 px-5 py-3 backdrop-blur-xl"
-			>
-				<h2
-					id="torrent-title"
-					class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-200"
-				>
-					<Icon icon="mdi:magnet" class="h-5 w-5 text-sky-400" />
-					Torrents
-					<span
-						class="rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] text-zinc-400"
-					>
-						{torrents.length}
-					</span>
-				</h2>
-				<button
-					type="button"
-					onclick={() => (torrent_modal = false)}
-					aria-label="Close"
-					class="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
-				>
-					<Icon icon="mdi:close" class="h-5 w-5" />
-				</button>
-			</header>
-
-			<div class="flex-1 overflow-y-auto p-4">
-				<div class="flex flex-col gap-1.5">
-					{#each torrents as t, i (t.hash ?? i)}
-						<div
-							role="button"
-							tabindex="0"
-							onclick={() => copyMagnet(t.magnet_url)}
-							onkeydown={(e) => onTorrentKey(e, t.magnet_url)}
-							title="Click to copy magnet link"
-							class="group flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/5 bg-zinc-800/40 px-3 py-2 text-xs transition-colors hover:border-sky-500/30 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
-						>
-							<span class="min-w-0 flex-1 truncate text-zinc-200">
-								{t.title || t.filename}
-								{#if t.season != null && t.episode != null && t.episode !== '0'}
-									<span class="ml-1 text-zinc-500"
-										>[S{t.season}E{t.episode}]</span
-									>
-								{/if}
-							</span>
-
-							<div class="flex shrink-0 items-center gap-2">
-								{#if t.seeds != null}
-									<span
-										class="flex items-center gap-0.5 text-emerald-400/80"
-										title="Seeds"
-									>
-										<Icon
-											icon="mdi:arrow-up"
-											class="h-3 w-3"
-										/>{t.seeds}
-									</span>
-								{/if}
-								{#if t.peers != null}
-									<span
-										class="flex items-center gap-0.5 text-rose-400/80"
-										title="Peers"
-									>
-										<Icon
-											icon="mdi:arrow-down"
-											class="h-3 w-3"
-										/>{t.peers}
-									</span>
-								{/if}
-								<span class="h-3 w-px bg-white/10"></span>
-								<span class="text-zinc-500">
-									{dayjs.unix(t.date_released_unix).fromNow()}
-								</span>
-								<span class="h-3 w-px bg-white/10"></span>
-								<span class="text-zinc-400"
-									>{humanFileSize(Number(t.size_bytes))}</span
-								>
-								<a
-									href={t.torrent_url}
-									target="_blank"
-									rel="noreferrer"
-									aria-label="Download .torrent"
-									title="Download .torrent"
-									onclick={stopPropagation(bubble('click'))}
-									class="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
-								>
-									<Icon
-										icon="simple-icons:utorrent"
-										class="h-4 w-4"
-									/>
-								</a>
-								<a
-									href={t.magnet_url}
-									aria-label="Open magnet link"
-									title="Open magnet link"
-									onclick={stopPropagation(bubble('click'))}
-									class="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
-								>
-									<Icon icon="mdi:magnet" class="h-4 w-4" />
-								</a>
-							</div>
-						</div>
-					{/each}
-				</div>
-
-				<div
-					class="mt-5 flex flex-wrap items-center justify-end gap-2 text-xs text-zinc-500"
-				>
-					<span>More torrents:</span>
-					<a
-						href="https://torrentgalaxy.to/"
-						target="_blank"
-						rel="noreferrer"
-						class="rounded-md border border-sky-500/20 bg-sky-500/10 px-2 py-1 font-medium text-sky-300 transition-colors hover:bg-sky-500/20"
-					>
-						torrentgalaxy.to
-					</a>
-					<a
-						href="https://eztvx.to/"
-						target="_blank"
-						rel="noreferrer"
-						class="rounded-md border border-sky-500/20 bg-sky-500/10 px-2 py-1 font-medium text-sky-300 transition-colors hover:bg-sky-500/20"
-					>
-						eztvx.to
-					</a>
-				</div>
-			</div>
-		</div>
-	</div>
-{/if}
+<!-- ============ TORRENT MODAL (extraído) ============ -->
+<TorrentModal bind:open={torrent_modal} {torrents} />
